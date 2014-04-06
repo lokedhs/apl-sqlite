@@ -37,6 +37,7 @@
 #pragma GCC diagnostic pop
 
 #include "Connection.hh"
+#include "ResultValue.hh"
 
 typedef vector<Connection> DbConnectionVector;
 
@@ -207,18 +208,20 @@ Token run_query( APL_Float qct, Value_P A, Value_P B )
         raise_sqlite_error( conn.get_db(), "Error preparing query" );
     }
 
-    Shape result_shape( 1, 1 );
-    Value_P db_result_value( new Value( result_shape, LOC ) );
-
+    vector<ResultRow> results;
     int result;
     while( (result = sqlite3_step( statement )) != SQLITE_DONE ) {
         if( result != SQLITE_ROW ) {
             raise_sqlite_error( conn.get_db(), "Error reading sql result" );
         }
-        CERR << "row" << endl;
+
+        ResultRow row;
+        row.add_values( statement );
+        results.push_back( row );
     }
 
-    CERR << "end of results" << endl;
+    Shape result_shape( 1, 1 );
+    Value_P db_result_value( new Value( result_shape, LOC ) );
 
     new (db_result_value->next_ravel()) IntCell( 1000 );
 
