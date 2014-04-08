@@ -46,19 +46,24 @@ static Value_P make_string_cell( const std::string &string, const char *loc )
     return cell;
 }
 
-void IntResultValue::update( Cell *cell )
+void IntResultValue::update( Cell *cell ) const
 {
     new (cell) IntCell( value );
 }
 
-void DoubleResultValue::update( Cell *cell )
+void DoubleResultValue::update( Cell *cell ) const
 {
     new (cell) FloatCell( value );
 }
 
-void StringResultValue::update( Cell *cell )
+void StringResultValue::update( Cell *cell ) const
 {
     new (cell) PointerCell( make_string_cell( value, LOC ) );
+}
+
+void NullResultValue::update( Cell *cell ) const
+{
+    new (cell) PointerCell( Value::Idx0_P );
 }
 
 void ResultRow::add_values( sqlite3_stmt *statement )
@@ -66,7 +71,8 @@ void ResultRow::add_values( sqlite3_stmt *statement )
     int n = sqlite3_column_count( statement );
     for( int i = 0 ; i < n ; i++ ) {
         ResultValue *value;
-        switch( sqlite3_column_type( statement, i ) ) {
+        int type = sqlite3_column_type( statement, i );
+        switch( type ) {
         case SQLITE_INTEGER:
             value = new IntResultValue( sqlite3_column_int( statement, i ) );
             break;
@@ -82,6 +88,10 @@ void ResultRow::add_values( sqlite3_stmt *statement )
         case SQLITE_NULL:
             value = new NullResultValue();
             break;
+        default:
+            CERR << "Unsupported column type, column=" << i << ", type+" << type << endl;
+            value = new NullResultValue();
         }
+        values.push_back( value );
     }
 }

@@ -30,14 +30,14 @@ class ResultValue
 {
 public:
     virtual ~ResultValue() {}
-    virtual void update( Cell *cell ) = 0;
+    virtual void update( Cell *cell ) const = 0;
 };
 
 class IntResultValue : public ResultValue {
 public:
     IntResultValue( int value_in ) : value( value_in ) {}
     virtual ~IntResultValue() {}
-    virtual void update( Cell *cell );
+    virtual void update( Cell *cell ) const;
 
 private:
     int value;
@@ -47,7 +47,7 @@ class DoubleResultValue : public ResultValue {
 public:
     DoubleResultValue( double value_in ) : value( value_in ) {}
     virtual ~DoubleResultValue() {}
-    virtual void update( Cell *cell );
+    virtual void update( Cell *cell ) const;
 
 private:
     double value;
@@ -57,14 +57,14 @@ class NullResultValue : public ResultValue {
 public:
     NullResultValue() {};
     virtual ~NullResultValue() {}
-    virtual void update( Cell *cell );
+    virtual void update( Cell *cell ) const;
 };
 
 class StringResultValue : public ResultValue {
 public:
     StringResultValue( string value_in ) : value( value_in ) {}
     virtual ~StringResultValue() {}
-    virtual void update( Cell *cell );
+    virtual void update( Cell *cell ) const;
   
 private:
     string value;
@@ -77,9 +77,10 @@ public:
     ResultRow( const ResultRow &orig ) : values( orig.values ) {}
     ~ResultRow() {}
     void add_values( sqlite3_stmt *statement );
+    const vector<const ResultValue *> &get_values() { return values; }
 
 private:
-    vector <ResultValue *> values;
+    vector<const ResultValue *> values;
 };
 
 #endif

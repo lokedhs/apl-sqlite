@@ -52,7 +52,7 @@ static Token list_functions( ostream &out )
     out << "Available function numbers:" << endl
         << "FN[1] name          - open database. Returns reference ID" << endl
         << "FN[2] ref           - close database" << endl
-        << "ref FN[3] query ... - sent SQL query (remaining params are bind args)";
+        << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl;
     return Token(TOK_APL_VALUE1, Value::Str0_P);
 }
 
@@ -220,10 +220,22 @@ Token run_query( APL_Float qct, Value_P A, Value_P B )
         results.push_back( row );
     }
 
-    Shape result_shape( 1, 1 );
-    Value_P db_result_value( new Value( result_shape, LOC ) );
-
-    new (db_result_value->next_ravel()) IntCell( 1000 );
+    Value_P db_result_value;
+    int row_count = results.size();
+    if( row_count > 0 ) {
+        int col_count = results[0].get_values().size();
+        Shape result_shape( row_count, col_count );
+        db_result_value = new Value( result_shape, LOC );
+        for( vector<ResultRow>::iterator row_iterator = results.begin() ; row_iterator != results.end() ; row_iterator++ ) {
+            const vector<const ResultValue *> &row = row_iterator->get_values();
+            for( vector<const ResultValue *>::const_iterator col_iterator = row.begin() ; col_iterator != row.end() ; col_iterator++ ) {
+                (*col_iterator)->update( db_result_value->next_ravel() );
+            }
+        }
+    }
+    else {
+        db_result_value = Value::Idx0_P;
+    }
 
     sqlite3_finalize( statement );
 
