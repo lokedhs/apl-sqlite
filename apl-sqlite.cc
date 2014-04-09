@@ -18,23 +18,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "apl-sqlite.hh"
+#include "Sqlite3Connection.hh"
+
 #include <vector>
 
 #include <string.h>
-#include <sqlite3.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wpragmas"
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wreturn-type"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#pragma GCC diagnostic ignored "-Wreorder"
-#pragma GCC diagnostic ignored "-Wmismatched-tags"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#include "Native_interface.hh"
-#pragma GCC diagnostic pop
 
 #include "Connection.hh"
 #include "ResultValue.hh"
@@ -70,22 +59,10 @@ static int find_free_connection( void )
 
 static Token open_database( Value_P B )
 {
-    if( !B->is_char_string() ) {
-        Workspace::more_error() = "SQLite database connect argument must be a single string";
-        DOMAIN_ERROR;
-    }
-
-    string filename = B->get_UCS_ravel().to_string();
-    sqlite3 *db;
-    if( sqlite3_open( filename.c_str(), &db ) != SQLITE_OK ) {
-        stringstream out;
-        out << "Error opening database: " << sqlite3_errmsg( db );
-        Workspace::more_error() = out.str().c_str();
-        DOMAIN_ERROR;
-    }
+    Connection *connection = create_sqlite_connection( B );
 
     int connection_index = find_free_connection();
-    connections[connection_index] = new Connection( db );
+    connections[connection_index] = connection;
 
     return Token( TOK_APL_VALUE1, Value_P( new Value( IntCell( connection_index ), LOC ) ) );
 }
@@ -114,14 +91,6 @@ static Connection *value_to_db_id( APL_Float qct, Value_P value )
     return conn;
 }
 
-static void raise_sqlite_error( sqlite3 *db, const string &message )
-{
-    stringstream out;
-    out << message << ": " << sqlite3_errmsg( db );
-    Workspace::more_error() = out.str().c_str();
-    DOMAIN_ERROR;
-}
-
 static Token close_database( APL_Float qct, Value_P B )
 {
     if( !B->is_int_skalar( qct ) ) {
@@ -136,11 +105,6 @@ static Token close_database( APL_Float qct, Value_P B )
     Connection *conn = connections[db_id];
     if( conn == NULL ) {
         throw_illegal_db_id();
-    }
-
-    sqlite3 *db = conn->get_db();
-    if( sqlite3_close( db ) != SQLITE_OK ) {
-        raise_sqlite_error( db, "Error closing database" );
     }
 
     connections[db_id] = NULL;
@@ -198,48 +162,8 @@ Token run_query( APL_Float qct, Value_P A, Value_P B )
 {
     Connection *conn = value_to_db_id( qct, A );
     string sql = make_query( qct, B );
-    
-    sqlite3_stmt *statement;
-    const char *sql_charptr = sql.c_str();
-    if( sqlite3_prepare_v2( conn->get_db(),
-                            sql_charptr, strlen( sql_charptr ) + 1,
-                            &statement, NULL ) != SQLITE_OK ) {
-        raise_sqlite_error( conn->get_db(), "Error preparing query" );
-    }
 
-    vector<ResultRow> results;
-    int result;
-    while( (result = sqlite3_step( statement )) != SQLITE_DONE ) {
-        if( result != SQLITE_ROW ) {
-            raise_sqlite_error( conn->get_db(), "Error reading sql result" );
-        }
-
-        ResultRow row;
-        row.add_values( statement );
-        results.push_back( row );
-    }
-
-    Value_P db_result_value;
-    int row_count = results.size();
-    if( row_count > 0 ) {
-        int col_count = results[0].get_values().size();
-        Shape result_shape( row_count, col_count );
-        db_result_value = new Value( result_shape, LOC );
-        for( vector<ResultRow>::iterator row_iterator = results.begin() ; row_iterator != results.end() ; row_iterator++ ) {
-            const vector<const ResultValue *> &row = row_iterator->get_values();
-            for( vector<const ResultValue *>::const_iterator col_iterator = row.begin() ; col_iterator != row.end() ; col_iterator++ ) {
-                (*col_iterator)->update( db_result_value->next_ravel() );
-            }
-        }
-    }
-    else {
-        db_result_value = Value::Idx0_P;
-    }
-
-    sqlite3_finalize( statement );
-
-    db_result_value->check_value( LOC );
-    return Token( TOK_APL_VALUE1, db_result_value );
+    return conn->run_query( sql );
 }
 
 Fun_signature get_signature()
@@ -251,7 +175,12 @@ void close_fun( Cause cause )
 {
 }
 
-Token eval_AB(Value_P A, Value_P B)
+Token eval_B( Value_P B )
+{
+    return list_functions( COUT );
+}
+
+Token eval_AB( Value_P A, Value_P B )
 {
     return list_functions( COUT );
 }
@@ -298,7 +227,7 @@ Token eval_AXB(const Value_P A, const Value_P X, const Value_P B)
 void *get_function_mux( const char *function_name )
 {
     if( strcmp( function_name, "get_signature" ) == 0 ) return (void *)&get_signature;
-//    if( strcmp( function_name, "eval_B" ) == 0 )        return (void *)&eval_B;
+    if( strcmp( function_name, "eval_B" ) == 0 )        return (void *)&eval_B;
     if( strcmp( function_name, "eval_AB" ) == 0 )       return (void *)&eval_AB;
     if( strcmp( function_name, "eval_XB" ) == 0 )       return (void *)&eval_XB;
     if( strcmp( function_name, "eval_AXB" ) == 0 )      return (void *)&eval_AXB;

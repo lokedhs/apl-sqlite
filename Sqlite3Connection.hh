@@ -18,18 +18,25 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONNECTION_HH
-#define CONNECTION_HH
+#ifndef SQLITE_CONNECTION_HH
+#define SQLITE_CONNECTION_HH
 
-#include "apl-sqlite.hh"
-#include <stdlib.h>
+#include "Connection.hh"
 
-class Connection
-{
+#include <sqlite3.h>
+
+class SqliteConnection : public Connection {
 public:
-    Connection() {}
-    virtual ~Connection() {}
-    virtual Token run_query( const string &sql ) = 0;
+    SqliteConnection( sqlite3 *db_in ) : db( db_in ) {}
+    virtual ~SqliteConnection();
+    virtual Token run_query( const string &sql );
+
+private:
+    void raise_sqlite_error( const string &message );
+    sqlite3 *db;
 };
+
+SqliteConnection *create_sqlite_connection( Value_P B );
+
 
 #endif
