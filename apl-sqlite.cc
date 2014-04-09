@@ -39,7 +39,7 @@
 #include "Connection.hh"
 #include "ResultValue.hh"
 
-typedef vector<Connection> DbConnectionVector;
+typedef vector<Connection *> DbConnectionVector;
 
 DbConnectionVector connections;
 
@@ -59,13 +59,12 @@ static Token list_functions( ostream &out )
 static int find_free_connection( void )
 {
     for( int i = 0 ; i < static_cast<int>( connections.size() ) ; i++ ) {
-        if( !connections[i].is_active() ) {
+        if( connections[i] == NULL ) {
             return i;
         }
     }
 
-    Connection conn;
-    connections.push_back( conn );
+    connections.push_back( NULL );
     return connections.size() - 1;
 }
 
@@ -86,8 +85,7 @@ static Token open_database( Value_P B )
     }
 
     int connection_index = find_free_connection();
-    Connection &conn = connections[connection_index];
-    conn.set_db( db );
+    connections[connection_index] = new Connection( db );
 
     return Token( TOK_APL_VALUE1, Value_P( new Value( IntCell( connection_index ), LOC ) ) );
 }
@@ -98,7 +96,7 @@ static void throw_illegal_db_id( void )
     DOMAIN_ERROR;
 }
 
-static Connection &value_to_db_id( APL_Float qct, Value_P value )
+static Connection *value_to_db_id( APL_Float qct, Value_P value )
 {
     if( !value->is_int_skalar( qct ) ) {
         throw_illegal_db_id();
@@ -108,8 +106,8 @@ static Connection &value_to_db_id( APL_Float qct, Value_P value )
     if( db_id < 0 || db_id >= (int)connections.size() ) {
         throw_illegal_db_id();
     }
-    Connection &conn = connections[db_id];
-    if( !conn.is_active() ) {
+    Connection *conn = connections[db_id];
+    if( conn == NULL ) {
         throw_illegal_db_id();
     }
 
@@ -135,17 +133,18 @@ static Token close_database( APL_Float qct, Value_P B )
     if( db_id < 0 || db_id >= (int)connections.size() ) {
         throw_illegal_db_id();
     }
-    Connection &conn = connections[db_id];
-    if( !conn.is_active() ) {
+    Connection *conn = connections[db_id];
+    if( conn == NULL ) {
         throw_illegal_db_id();
     }
 
-    sqlite3 *db = conn.get_db();
+    sqlite3 *db = conn->get_db();
     if( sqlite3_close( db ) != SQLITE_OK ) {
         raise_sqlite_error( db, "Error closing database" );
     }
 
-    conn.set_db( NULL );
+    connections[db_id] = NULL;
+    delete conn;
 
     return Token( TOK_APL_VALUE1, Value::Str0_P );
 }
@@ -197,22 +196,22 @@ static string make_query( APL_Float qct, Value_P value )
 
 Token run_query( APL_Float qct, Value_P A, Value_P B )
 {
-    Connection &conn = value_to_db_id( qct, A );
+    Connection *conn = value_to_db_id( qct, A );
     string sql = make_query( qct, B );
     
     sqlite3_stmt *statement;
     const char *sql_charptr = sql.c_str();
-    if( sqlite3_prepare_v2( conn.get_db(),
+    if( sqlite3_prepare_v2( conn->get_db(),
                             sql_charptr, strlen( sql_charptr ) + 1,
                             &statement, NULL ) != SQLITE_OK ) {
-        raise_sqlite_error( conn.get_db(), "Error preparing query" );
+        raise_sqlite_error( conn->get_db(), "Error preparing query" );
     }
 
     vector<ResultRow> results;
     int result;
     while( (result = sqlite3_step( statement )) != SQLITE_DONE ) {
         if( result != SQLITE_ROW ) {
-            raise_sqlite_error( conn.get_db(), "Error reading sql result" );
+            raise_sqlite_error( conn->get_db(), "Error reading sql result" );
         }
 
         ResultRow row;

@@ -27,10 +27,8 @@
 class Connection
 {
 public:
-    Connection() : db( NULL ) {}
+    Connection( sqlite3 *db_in ) : db( db_in ) {}
     ~Connection() {}
-    bool is_active( void ) { return db != NULL; }
-    void set_db( sqlite3 *db_in ) { db = db_in; }
     sqlite3 *get_db( void ) { return db; }
 
 private:
