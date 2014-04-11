@@ -103,6 +103,11 @@ Token SqliteConnection::run_query( const string &sql, ArgListBuilder *arg_list )
     return Token( TOK_APL_VALUE1, db_result_value );
 }
 
+Token SqliteConnection::run_update( const string &sql, ArgListBuilder *arg_list )
+{
+    return run_query( sql, arg_list );
+}
+
 ArgListBuilder *SqliteConnection::make_arg_list_builder( void )
 {
     SqliteArgListBuilder *builder = new SqliteArgListBuilder();

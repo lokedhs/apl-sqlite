@@ -41,7 +41,8 @@ static Token list_functions( ostream &out )
     out << "Available function numbers:" << endl
         << "FN[1] name          - open database. Returns reference ID" << endl
         << "FN[2] ref           - close database" << endl
-        << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl;
+        << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl
+        << "ref FN[4] query ... - send SQL update (remaining params are bind args)" << endl;
     return Token(TOK_APL_VALUE1, Value::Str0_P);
 }
 
@@ -113,13 +114,19 @@ static Token close_database( APL_Float qct, Value_P B )
     return Token( TOK_APL_VALUE1, Value::Str0_P );
 }
 
-Token run_query( APL_Float qct, Value_P A, Value_P B )
+static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
 {
     Connection *conn = value_to_db_id( qct, A );
 
     if( B->is_char_string() ) {
         auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
-        return conn->run_query( B->get_UCS_ravel().to_string(), arg_list.get() );
+        string statement = B->get_UCS_ravel().to_string();
+        if( query ) {
+            return conn->run_query( statement, arg_list.get() );
+        }
+        else {
+            return conn->run_update( statement, arg_list.get() );
+        }
     }
     else {
         const Shape &shape = B->get_shape();
@@ -165,13 +172,28 @@ Token run_query( APL_Float qct, Value_P A, Value_P B )
                 }
             }
 
-            return conn->run_query( statement, arg_list.get() );
+            if( query ) {
+                return conn->run_query( statement, arg_list.get() );
+            }
+            else {
+                return conn->run_query( statement, arg_list.get() );
+            }
         }
         else {
             Workspace::more_error() = "Illegal query argument";
             DOMAIN_ERROR;
         }
     }
+}
+
+Token run_query( APL_Float qct, Value_P A, Value_P B )
+{
+    return run_generic( qct, A, B, true );
+}
+
+Token run_update( APL_Float qct, Value_P A, Value_P B )
+{
+    return run_generic( qct, A, B, false );
 }
 
 Fun_signature get_signature()
@@ -225,6 +247,9 @@ Token eval_AXB(const Value_P A, const Value_P X, const Value_P B)
 
     case 3:
         return run_query( qct, A, B );
+
+    case 4:
+        return run_update( qct, A, B );
 
     default:
         Workspace::more_error() = "Illegal function number";
