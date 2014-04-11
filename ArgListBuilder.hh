@@ -25,6 +25,7 @@
 
 class ArgListBuilder {
 public:
+    virtual ~ArgListBuilder() {}
     virtual void append_string( const string &arg ) = 0;
     virtual void append_long( long arg ) = 0;
     virtual void append_double( double arg ) = 0;
