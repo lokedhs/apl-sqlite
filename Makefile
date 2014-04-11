@@ -18,7 +18,7 @@
 
 APL_DIST = $(HOME)/src/apl
 CXX = c++
-CXXFLAGS = -Wall -fPIC -g -I$(APL_DIST)/src
+CXXFLAGS = -Wall -Wno-sign-compare -fPIC -g -I$(APL_DIST)/src
 LIBS = -lsqlite3
 
 OBJS = apl-sqlite.o Sqlite3Connection.o ResultValue.o 
