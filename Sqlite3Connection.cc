@@ -21,6 +21,7 @@
 #include "apl-sqlite.hh"
 #include "Sqlite3Connection.hh"
 #include "ResultValue.hh"
+#include "SqliteArgListBuilder.hh"
 
 void SqliteConnection::raise_sqlite_error( const string &message )
 {
@@ -56,13 +57,16 @@ SqliteConnection *create_sqlite_connection( Value_P B )
     return new SqliteConnection( db );
 }
 
-Token SqliteConnection::run_query( const string &sql )
+Token SqliteConnection::run_query( const string &sql, ArgListBuilder *arg_list )
 {
     sqlite3_stmt *statement;
     const char *sql_charptr = sql.c_str();
     if( sqlite3_prepare_v2( db, sql_charptr, strlen( sql_charptr ) + 1, &statement, NULL ) != SQLITE_OK ) {
         raise_sqlite_error( "Error preparing query" );
     }
+
+    SqliteArgListBuilder *sqlite_arg_list = static_cast<SqliteArgListBuilder *>( arg_list );
+    sqlite_arg_list->bind_args( statement );
 
     vector<ResultRow> results;
     int result;
@@ -97,4 +101,10 @@ Token SqliteConnection::run_query( const string &sql )
 
     db_result_value->check_value( LOC );
     return Token( TOK_APL_VALUE1, db_result_value );
+}
+
+ArgListBuilder *SqliteConnection::make_arg_list_builder( void )
+{
+    SqliteArgListBuilder *builder = new SqliteArgListBuilder();
+    return builder;
 }

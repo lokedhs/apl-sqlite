@@ -18,20 +18,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONNECTION_HH
-#define CONNECTION_HH
+#ifndef ARG_LIST_BUILDER_HH
+#define ARG_LIST_BUILDER_HH
 
 #include "apl-sqlite.hh"
-#include "ArgListBuilder.hh"
 
-#include <stdlib.h>
-
-class Connection
-{
+class ArgListBuilder {
 public:
-    virtual ~Connection() {}
-    virtual Token run_query( const string &sql, ArgListBuilder *arg_list ) = 0;
-    virtual ArgListBuilder *make_arg_list_builder( void ) = 0;
+    virtual void append_string( const string &arg ) = 0;
+    virtual void append_long( long arg ) = 0;
+    virtual void append_double( double arg ) = 0;
+    virtual void append_null( void ) = 0;
 };
 
 #endif

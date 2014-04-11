@@ -29,7 +29,8 @@ class SqliteConnection : public Connection {
 public:
     SqliteConnection( sqlite3 *db_in ) : db( db_in ) {}
     virtual ~SqliteConnection();
-    virtual Token run_query( const string &sql );
+    virtual Token run_query( const string &sql, ArgListBuilder *arg_list );
+    virtual ArgListBuilder *make_arg_list_builder( void );
 
 private:
     void raise_sqlite_error( const string &message );

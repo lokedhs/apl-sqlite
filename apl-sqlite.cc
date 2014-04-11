@@ -113,57 +113,65 @@ static Token close_database( APL_Float qct, Value_P B )
     return Token( TOK_APL_VALUE1, Value::Str0_P );
 }
 
-static string make_query( APL_Float qct, Value_P value )
+Token run_query( APL_Float qct, Value_P A, Value_P B )
 {
-    if( value->is_char_string() ) {
-        return value->get_UCS_ravel().to_string();
+    Connection *conn = value_to_db_id( qct, A );
+
+    if( B->is_char_string() ) {
+        auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
+        return conn->run_query( B->get_UCS_ravel().to_string(), arg_list.get() );
     }
     else {
-        const Shape &shape = value->get_shape();
-        if( shape.get_rank() == 1 ) {
-            Workspace::more_error() = "Rank 1 argument should be a string";
-            DOMAIN_ERROR;
+        const Shape &shape = B->get_shape();
+        if( shape.get_rank() == 0 ) {
+            Workspace::more_error() = "Query arguments can't be a scalar";
+            RANK_ERROR;
         }
-        else if( shape.get_rank() == 2 ) {
-            Value_P statement_value = value->get_ravel( 0 ).to_value( LOC );
+        else if( shape.get_rank() == 1 ) {
+            Value_P statement_value = B->get_ravel( 0 ).to_value( LOC );
             if( !statement_value->is_char_string() ) {
                 Workspace::more_error() = "SQL statement does not have the right type";
                 DOMAIN_ERROR;
             }
 
             string statement = statement_value->get_UCS_ravel().to_string();
-            vector<string> args;
             Assert_fatal( shape.get_volume() >= 1 );
+
+            auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
+
             int num_args = shape.get_volume() - 1;
             for( int i = 0 ; i < num_args ; i++ ) {
-                Value_P arg_value = value->get_ravel( i + 1 ).to_value( LOC );
-                if( !arg_value->is_char_string() ) {
-                    Workspace::more_error() = "Argument should be a string";
-                    DOMAIN_ERROR;
+                const Cell &cell = B->get_ravel( i + 1 );
+                if( cell.is_integer_cell() ) {
+                    arg_list->append_long( cell.get_int_value() );
                 }
-                args.push_back( arg_value->get_UCS_ravel().to_string() );
+                else if( cell.is_float_cell() ) {
+                    arg_list->append_long( cell.get_real_value() );
+                }
+                else {
+                    Value_P value = cell.to_value( LOC );
+                    if( value->get_shape().get_volume() == 0 ) {
+                        arg_list->append_null();
+                    }
+                    if( value->is_char_string() ) {
+                        arg_list->append_string( value->get_UCS_ravel().to_string() );
+                    }
+                    else {
+                        stringstream out;
+                        out << "Illegal data type in argument " << i << " of arglist";
+                        Workspace::more_error() = out.str().c_str();
+                        DOMAIN_ERROR;
+                    }
+                }
             }
 
-            if( !args.empty() ) {
-                Workspace::more_error() = "Bind args are not yet implemented";
-                DOMAIN_ERROR;
-            }
-
-            return statement;
+            return conn->run_query( statement, arg_list.get() );
         }
         else {
             Workspace::more_error() = "Illegal query argument";
             DOMAIN_ERROR;
         }
     }
-}
-
-Token run_query( APL_Float qct, Value_P A, Value_P B )
-{
-    Connection *conn = value_to_db_id( qct, A );
-    string sql = make_query( qct, B );
-
-    return conn->run_query( sql );
 }
 
 Fun_signature get_signature()
