@@ -160,7 +160,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
                     if( value->get_shape().get_volume() == 0 ) {
                         arg_list->append_null();
                     }
-                    if( value->is_char_string() ) {
+                    else if( value->is_char_string() ) {
                         arg_list->append_string( value->get_UCS_ravel().to_string() );
                     }
                     else {
