@@ -58,7 +58,12 @@ void DoubleResultValue::update( Cell *cell ) const
 
 void StringResultValue::update( Cell *cell ) const
 {
-    new (cell) PointerCell( make_string_cell( value, LOC ) );
+    if( value.size() == 0 ) {
+        new (cell) PointerCell( Value::Str0_P );
+    }
+    else {
+        new (cell) PointerCell( make_string_cell( value, LOC ) );
+    }
 }
 
 void NullResultValue::update( Cell *cell ) const
