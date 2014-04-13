@@ -45,7 +45,7 @@ SqliteConnection *create_sqlite_connection( Value_P B )
         DOMAIN_ERROR;
     }
 
-    string filename = B->get_UCS_ravel().to_string();
+    string filename = to_string( B->get_UCS_ravel() );
     sqlite3 *db;
     if( sqlite3_open( filename.c_str(), &db ) != SQLITE_OK ) {
         stringstream out;

@@ -120,7 +120,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
 
     if( B->is_char_string() ) {
         auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
-        string statement = B->get_UCS_ravel().to_string();
+        string statement = to_string( B->get_UCS_ravel() );
         if( query ) {
             return conn->run_query( statement, arg_list.get() );
         }
@@ -141,7 +141,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
                 DOMAIN_ERROR;
             }
 
-            string statement = statement_value->get_UCS_ravel().to_string();
+            string statement = to_string( statement_value->get_UCS_ravel() );
             Assert_fatal( shape.get_volume() >= 1 );
 
             auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
@@ -161,7 +161,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
                         arg_list->append_null();
                     }
                     else if( value->is_char_string() ) {
-                        arg_list->append_string( value->get_UCS_ravel().to_string() );
+                        arg_list->append_string( to_string( value->get_UCS_ravel() ) );
                     }
                     else {
                         stringstream out;

@@ -33,6 +33,11 @@ public:
     virtual Token run_update( const string &sql, ArgListBuilder *arg_list );
     virtual ArgListBuilder *make_arg_list_builder( void );
 
+    // Transaction methods unimplemented for now
+    virtual void transaction_begin() {}
+    virtual void transaction_commit() {}
+    virtual void transaction_rollback() {}
+
 private:
     void raise_sqlite_error( const string &message );
     sqlite3 *db;

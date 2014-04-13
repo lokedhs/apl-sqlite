@@ -33,6 +33,9 @@ public:
     virtual Token run_query( const string &sql, ArgListBuilder *arg_list ) = 0;
     virtual Token run_update( const string &sql, ArgListBuilder *arg_list ) = 0;
     virtual ArgListBuilder *make_arg_list_builder( void ) = 0;
+    virtual void transaction_begin() = 0;
+    virtual void transaction_commit() = 0;
+    virtual void transaction_rollback() = 0;
 };
 
 #endif

@@ -34,4 +34,10 @@
 #include "Native_interface.hh"
 #pragma GCC diagnostic pop
 
+inline std::string to_string(const UCS_string & ucs)
+{
+    const UTF8_string utf(ucs);
+    return string((const char *)(utf.get_items()), utf.size());
+}
+
 #endif
