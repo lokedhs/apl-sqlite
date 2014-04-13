@@ -22,24 +22,38 @@
 #include "Sqlite3Connection.hh"
 
 #include <vector>
+#include <map>
 
 #include <string.h>
 
 #include "Connection.hh"
 #include "ResultValue.hh"
+#include "Provider.hh"
+#include "SqliteProvider.hh"
 
 typedef vector<Connection *> DbConnectionVector;
 
+map<const string, Provider *> providers;
 DbConnectionVector connections;
 
 extern "C" {
     void *get_function_mux( const char *function_name );
 }
 
+static void add_provider( Provider *provider )
+{
+    providers.insert( pair<const string, Provider *>( provider->get_name(), provider ) );
+}
+
+static void init_provider_map( void )
+{
+    add_provider( new SqliteProvider() );
+}
+
 static Token list_functions( ostream &out )
 {
     out << "Available function numbers:" << endl
-        << "FN[1] name          - open database. Returns reference ID" << endl
+        << "name FN[1] args     - open database. Returns reference ID" << endl
         << "FN[2] ref           - close database" << endl
         << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl
         << "ref FN[4] query ... - send SQL update (remaining params are bind args)" << endl;
@@ -58,12 +72,23 @@ static int find_free_connection( void )
     return connections.size() - 1;
 }
 
-static Token open_database( Value_P B )
+static Token open_database( Value_P A, Value_P B )
 {
-    Connection *connection = create_sqlite_connection( B );
+    if( !A->is_apl_char_vector() ) {
+        Workspace::more_error() = "Illegal database name";
+        DOMAIN_ERROR;
+    }
+    string type = to_string( A->get_UCS_ravel() );
+    map<const string, Provider *>::iterator provider_iterator = providers.find( type );
+    if( provider_iterator == providers.end() ) {
+        stringstream out;
+        out << "Unknown database type: " << type;
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
 
     int connection_index = find_free_connection();
-    connections[connection_index] = connection;
+    connections[connection_index] = provider_iterator->second->open_database( B );
 
     return Token( TOK_APL_VALUE1, Value_P( new Value( IntCell( connection_index ), LOC ) ) );
 }
@@ -198,6 +223,7 @@ Token run_update( APL_Float qct, Value_P A, Value_P B )
 
 Fun_signature get_signature()
 {
+    init_provider_map();
     return SIG_Z_A_F2_B;
 }
 
@@ -224,9 +250,6 @@ Token eval_XB(Value_P X, Value_P B)
     case 0:
         return list_functions( CERR );
 
-    case 1:
-        return open_database( B );
-
     case 2:
         return close_database( qct, B );
 
@@ -244,6 +267,9 @@ Token eval_AXB(const Value_P A, const Value_P X, const Value_P B)
     switch( function_number ) {
     case 0:
         return list_functions( CERR );
+
+    case 1:
+        return open_database( A, B );
 
     case 3:
         return run_query( qct, A, B );

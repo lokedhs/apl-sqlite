@@ -38,25 +38,6 @@ SqliteConnection::~SqliteConnection()
     }
 }
 
-SqliteConnection *create_sqlite_connection( Value_P B )
-{
-    if( !B->is_char_string() ) {
-        Workspace::more_error() = "SQLite database connect argument must be a single string";
-        DOMAIN_ERROR;
-    }
-
-    string filename = to_string( B->get_UCS_ravel() );
-    sqlite3 *db;
-    if( sqlite3_open( filename.c_str(), &db ) != SQLITE_OK ) {
-        stringstream out;
-        out << "Error opening database: " << sqlite3_errmsg( db );
-        Workspace::more_error() = out.str().c_str();
-        DOMAIN_ERROR;
-    }
-
-    return new SqliteConnection( db );
-}
-
 Token SqliteConnection::run_query( const string &sql, ArgListBuilder *arg_list )
 {
     sqlite3_stmt *statement;

@@ -18,29 +18,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SQLITE_CONNECTION_HH
-#define SQLITE_CONNECTION_HH
+#include "Provider.hh"
 
-#include "Connection.hh"
-
-#include <sqlite3.h>
-
-class SqliteConnection : public Connection {
+class SqliteProvider : public Provider {
 public:
-    SqliteConnection( sqlite3 *db_in ) : db( db_in ) {}
-    virtual ~SqliteConnection();
-    virtual Token run_query( const string &sql, ArgListBuilder *arg_list );
-    virtual Token run_update( const string &sql, ArgListBuilder *arg_list );
-    virtual ArgListBuilder *make_arg_list_builder( void );
-
-    // Transaction methods unimplemented for now
-    virtual void transaction_begin() {}
-    virtual void transaction_commit() {}
-    virtual void transaction_rollback() {}
-
-private:
-    void raise_sqlite_error( const string &message );
-    sqlite3 *db;
+    virtual ~SqliteProvider() {}
+    virtual const string get_name( void ) { return "sqlite"; }
+    virtual Connection *open_database( Value_P B );
 };
-
-#endif

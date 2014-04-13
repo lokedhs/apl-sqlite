@@ -18,29 +18,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SQLITE_CONNECTION_HH
-#define SQLITE_CONNECTION_HH
+#include "SqliteProvider.hh"
+#include "Sqlite3Connection.hh"
 
-#include "Connection.hh"
+static SqliteConnection *create_sqlite_connection( Value_P B )
+{
+    if( !B->is_char_string() ) {
+        Workspace::more_error() = "SQLite database connect argument must be a single string";
+        DOMAIN_ERROR;
+    }
 
-#include <sqlite3.h>
-
-class SqliteConnection : public Connection {
-public:
-    SqliteConnection( sqlite3 *db_in ) : db( db_in ) {}
-    virtual ~SqliteConnection();
-    virtual Token run_query( const string &sql, ArgListBuilder *arg_list );
-    virtual Token run_update( const string &sql, ArgListBuilder *arg_list );
-    virtual ArgListBuilder *make_arg_list_builder( void );
-
-    // Transaction methods unimplemented for now
-    virtual void transaction_begin() {}
-    virtual void transaction_commit() {}
-    virtual void transaction_rollback() {}
-
-private:
-    void raise_sqlite_error( const string &message );
+    string filename = to_string( B->get_UCS_ravel() );
     sqlite3 *db;
-};
+    if( sqlite3_open( filename.c_str(), &db ) != SQLITE_OK ) {
+        stringstream out;
+        out << "Error opening database: " << sqlite3_errmsg( db );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
 
-#endif
+    return new SqliteConnection( db );
+}
+
+Connection *SqliteProvider::open_database( Value_P B )
+{
+    Connection *connection = create_sqlite_connection( B );
+    return connection;
+}

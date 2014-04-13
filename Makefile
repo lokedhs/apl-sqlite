@@ -21,7 +21,7 @@ CXX = c++
 CXXFLAGS = -Wall -Wno-sign-compare -fPIC -g -I$(APL_DIST)/src
 LIBS = -lsqlite3
 
-OBJS = apl-sqlite.o Sqlite3Connection.o ResultValue.o SqliteArgListBuilder.o
+OBJS = apl-sqlite.o Sqlite3Connection.o ResultValue.o SqliteArgListBuilder.o SqliteProvider.o
 
 UNAME = $(shell uname)
 ifeq ($(UNAME),Darwin)
