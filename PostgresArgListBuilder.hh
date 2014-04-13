@@ -18,46 +18,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SQLITE_ARG_LIST_BUILDER_HH
-#define SQLITE_ARG_LIST_BUILDER_HH
+#ifndef POSTGRES_ARG_LIST_BUILDER_HH
+#define POSTGRES_ARG_LIST_BUILDER_HH
 
 #include "apl-sqlite.hh"
-#include "Sqlite3Connection.hh"
+#include "PostgresConnection.hh"
 #include "ArgListBuilder.hh"
 
-class SqliteBindArg {
+class PostgresArgListBuilder : public ArgListBuilder {
 public:
-    virtual ~SqliteBindArg() {}
-    virtual void bind( sqlite3_stmt *statement, int pos ) = 0;
-};
-
-template<class T>
-class SqliteBindArgBind : public SqliteBindArg {
-public:
-    SqliteBindArgBind( const T &arg_in ) : arg( arg_in ) {}
-    virtual void bind( sqlite3_stmt *statement, int pos );
-
-private:
-    T arg;
-};
-
-class SqliteBindArgNull : public SqliteBindArg {
-public:
-    virtual void bind( sqlite3_stmt *statement, int pos );    
-};
-
-class SqliteArgListBuilder : public ArgListBuilder {
-public:
-    SqliteArgListBuilder() {}
-    virtual ~SqliteArgListBuilder();
+    PostgresArgListBuilder() {}
+    virtual ~PostgresArgListBuilder();
     virtual void append_string( const string &arg );
     virtual void append_long( long arg );
     virtual void append_double( double arg );
     virtual void append_null( void );
-    void bind_args( sqlite3_stmt *statement );
-
-private:
-    vector<SqliteBindArg *> args;
 };
 
 #endif
