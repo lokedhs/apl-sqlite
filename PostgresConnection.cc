@@ -20,18 +20,19 @@
 
 #include "apl-sqlite.hh"
 #include "PostgresConnection.hh"
+#include "PostgresArgListBuilder.hh"
 
 PostgresConnection::~PostgresConnection()
 {
     PQfinish( db );
 }
 
-Token PostgresConnection::run_query( const string &sql, ArgListBuilder *arg_list )
+ArgListBuilder *PostgresConnection::make_prepared_query( const string &sql )
 {
-    PGresult *result = PQexecParams( db, sql.c_str() );
+    return new PostgresArgListBuilder( this, sql );
 }
 
-ArgListBuilder *PostgresConnection::make_arg_list_builder( void )
+ArgListBuilder *PostgresConnection::make_prepared_update( const string &sql )
 {
-    return new PostgresArgListBuilder();
+    Assert_fatal(false);
 }

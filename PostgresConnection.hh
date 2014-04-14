@@ -23,20 +23,21 @@
 
 #include "Connection.hh"
 
-#include <postgresql/libpq-fe.h>
+#include <libpq-fe.h>
 
 class PostgresConnection : public Connection {
 public:
     PostgresConnection( PGconn *db_in ) : db( db_in ) {}
     virtual ~PostgresConnection();
-    virtual Token run_query( const string &sql, ArgListBuilder *arg_list );
-    virtual Token run_update( const string &sql, ArgListBuilder *arg_list );
-    virtual ArgListBuilder *make_arg_list_builder( void );
+    virtual ArgListBuilder *make_prepared_query( const string &sql );
+    virtual ArgListBuilder *make_prepared_update( const string &sql );
 
     // Transaction methods unimplemented for now
     virtual void transaction_begin() {}
     virtual void transaction_commit() {}
     virtual void transaction_rollback() {}
+
+    PGconn *get_db() { return db; }
 
 private:
     PGconn *db;

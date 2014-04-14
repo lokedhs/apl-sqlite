@@ -25,14 +25,45 @@
 #include "PostgresConnection.hh"
 #include "ArgListBuilder.hh"
 
+class PostgresArg
+{
+public:
+    virtual ~PostgresArg() {}
+    virtual void update( Oid *types, const char **values, int *lengths, int *formats, int pos );
+};
+
+template<class T>
+class PostgresBindArg : public PostgresArg
+{
+public:
+    virtual ~PostgresBindArg() {}
+    PostgresBindArg( T arg_in ) : arg( arg_in ) {}
+
+private:
+    T arg;
+};
+
+class PostgresNullArg : public PostgresArg
+{
+public:
+    virtual ~PostgresNullArg() {}
+    virtual void update( Oid *types, const char **values, int *lengths, int *formats, int pos );
+};
+
 class PostgresArgListBuilder : public ArgListBuilder {
 public:
-    PostgresArgListBuilder() {}
+    PostgresArgListBuilder( PostgresConnection *connection_in, const string &sql_in );
     virtual ~PostgresArgListBuilder();
-    virtual void append_string( const string &arg );
-    virtual void append_long( long arg );
-    virtual void append_double( double arg );
-    virtual void append_null( void );
+    virtual void append_string( const string &arg, int pos );
+    virtual void append_long( long arg, int pos );
+    virtual void append_double( double arg, int pos );
+    virtual void append_null( int pos );
+    virtual Token run_query( void );
+
+private:
+    PostgresConnection *connection;
+    string sql;
+    vector<PostgresArg *> args;
 };
 
 #endif
