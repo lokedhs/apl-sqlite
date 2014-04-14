@@ -19,10 +19,11 @@
 */
 
 #include "apl-sqlite.hh"
-#include "Sqlite3Connection.hh"
+#include "SqliteConnection.hh"
 
 #include <vector>
 #include <map>
+#include <typeinfo>
 
 #include <string.h>
 
@@ -144,14 +145,16 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
     Connection *conn = value_to_db_id( qct, A );
 
     if( B->is_char_string() ) {
-        auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
         string statement = to_string( B->get_UCS_ravel() );
+        ArgListBuilder *builder;
         if( query ) {
-            return conn->run_query( statement, arg_list.get() );
+            builder = conn->make_prepared_query( statement );
         }
         else {
-            return conn->run_update( statement, arg_list.get() );
+            builder = conn->make_prepared_update( statement );
         }
+        auto_ptr<ArgListBuilder> arg_list( builder );
+        return arg_list->run_query();
     }
     else {
         const Shape &shape = B->get_shape();
@@ -169,24 +172,31 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
             string statement = to_string( statement_value->get_UCS_ravel() );
             Assert_fatal( shape.get_volume() >= 1 );
 
-            auto_ptr<ArgListBuilder> arg_list( conn->make_arg_list_builder() );
+            ArgListBuilder *builder;
+            if( query ) {
+                builder = conn->make_prepared_query( statement );
+            }
+            else {
+                builder = conn->make_prepared_update( statement );
+            }
+            auto_ptr<ArgListBuilder> arg_list( builder );
 
             int num_args = shape.get_volume() - 1;
             for( int i = 0 ; i < num_args ; i++ ) {
                 const Cell &cell = B->get_ravel( i + 1 );
                 if( cell.is_integer_cell() ) {
-                    arg_list->append_long( cell.get_int_value() );
+                    arg_list->append_long( cell.get_int_value(), i );
                 }
                 else if( cell.is_float_cell() ) {
-                    arg_list->append_long( cell.get_real_value() );
+                    arg_list->append_long( cell.get_real_value(), i );
                 }
                 else {
                     Value_P value = cell.to_value( LOC );
                     if( value->get_shape().get_volume() == 0 ) {
-                        arg_list->append_null();
+                        arg_list->append_null( i );
                     }
                     else if( value->is_char_string() ) {
-                        arg_list->append_string( to_string( value->get_UCS_ravel() ) );
+                        arg_list->append_string( to_string( value->get_UCS_ravel() ), i );
                     }
                     else {
                         stringstream out;
@@ -197,12 +207,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
                 }
             }
 
-            if( query ) {
-                return conn->run_query( statement, arg_list.get() );
-            }
-            else {
-                return conn->run_query( statement, arg_list.get() );
-            }
+            return arg_list->run_query();
         }
         else {
             Workspace::more_error() = "Illegal query argument";

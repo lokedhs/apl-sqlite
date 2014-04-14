@@ -18,30 +18,34 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "SqliteProvider.hh"
+#include "apl-sqlite.hh"
 #include "SqliteConnection.hh"
+#include "ResultValue.hh"
+#include "SqliteArgListBuilder.hh"
 
-static SqliteConnection *create_sqlite_connection( Value_P B )
+void SqliteConnection::raise_sqlite_error( const string &message )
 {
-    if( !B->is_char_string() ) {
-        Workspace::more_error() = "SQLite database connect argument must be a single string";
-        DOMAIN_ERROR;
-    }
-
-    string filename = to_string( B->get_UCS_ravel() );
-    sqlite3 *db;
-    if( sqlite3_open( filename.c_str(), &db ) != SQLITE_OK ) {
-        stringstream out;
-        out << "Error opening database: " << sqlite3_errmsg( db );
-        Workspace::more_error() = out.str().c_str();
-        DOMAIN_ERROR;
-    }
-
-    return new SqliteConnection( db );
+    stringstream out;
+    out << message << ": " << sqlite3_errmsg( db );
+    Workspace::more_error() = out.str().c_str();
+    DOMAIN_ERROR;
 }
 
-Connection *SqliteProvider::open_database( Value_P B )
+SqliteConnection::~SqliteConnection()
 {
-    Connection *connection = create_sqlite_connection( B );
-    return connection;
+    if( sqlite3_close( db ) != SQLITE_OK ) {
+        raise_sqlite_error( "Error closing database" );
+    }
+}
+
+ArgListBuilder *SqliteConnection::make_prepared_query( const string &sql )
+{
+    SqliteArgListBuilder *builder = new SqliteArgListBuilder( this, sql );
+    return builder;
+}
+
+ArgListBuilder *SqliteConnection::make_prepared_update( const string &sql )
+{
+    SqliteArgListBuilder *builder = new SqliteArgListBuilder( this, sql );
+    return builder;
 }

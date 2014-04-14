@@ -21,20 +21,22 @@
 #include "SqliteArgListBuilder.hh"
 
 #include <string.h>
+#include "ResultValue.hh"
 
-SqliteArgListBuilder::~SqliteArgListBuilder()
+SqliteArgListBuilder::SqliteArgListBuilder( SqliteConnection *connection_in, const string &sql )
+    : connection( connection_in )
 {
-    for( vector<SqliteBindArg *>::iterator i = args.begin() ; i != args.end() ; i++ ) {
-        delete *i;
+    const char *sql_charptr = sql.c_str();
+    if( sqlite3_prepare_v2( connection->get_db(),
+                            sql_charptr, strlen( sql_charptr ) + 1,
+                            &statement, NULL ) != SQLITE_OK ) {
+        connection->raise_sqlite_error( "Error preparing query" );
     }
 }
 
-void SqliteArgListBuilder::bind_args( sqlite3_stmt *statement )
+SqliteArgListBuilder::~SqliteArgListBuilder()
 {
-    int pos = 1;
-    for( vector<SqliteBindArg *>::iterator i = args.begin() ; i != args.end() ; i++ ) {
-        (*i)->bind( statement, pos++ );
-    }    
+    sqlite3_finalize( statement );
 }
 
 static void free_text_arg( void *arg )
@@ -42,50 +44,62 @@ static void free_text_arg( void *arg )
     free( arg );
 }
 
-template<>
-void SqliteBindArgBind<string>::bind( sqlite3_stmt *statement, int pos )
+void SqliteArgListBuilder::append_string( const string &arg, int pos )
 {
     char *text = strdup( arg.c_str() );
     if( text == NULL ) {
         CERR << "Failed to allocate memory for bind arg" << endl;
         abort();
     }
-    sqlite3_bind_text( statement, pos, text, -1, free_text_arg );
+    sqlite3_bind_text( statement, pos + 1, text, -1, free_text_arg );
 }
 
-template<>
-void SqliteBindArgBind<long>::bind( sqlite3_stmt *statement, int pos )
+void SqliteArgListBuilder::append_long( long arg, int pos )
 {
-    sqlite3_bind_int64( statement, pos, arg );
+    sqlite3_bind_int64( statement, pos + 1, arg );
 }
 
-template<>
-void SqliteBindArgBind<double>::bind( sqlite3_stmt *statement, int pos )
+void SqliteArgListBuilder::append_double( double arg, int pos )
 {
-    sqlite3_bind_double( statement, pos, arg );
+    sqlite3_bind_double( statement, pos + 1, arg );
 }
 
-void SqliteBindArgNull::bind( sqlite3_stmt *statement, int pos )
+void SqliteArgListBuilder::append_null( int pos )
 {
-    sqlite3_bind_null( statement, pos );
+    sqlite3_bind_null( statement, pos + 1 );
 }
 
-void SqliteArgListBuilder::append_string( const string &arg )
+Token SqliteArgListBuilder::run_query( void )
 {
-    args.push_back( new SqliteBindArgBind<string>( arg ) );
-}
+    vector<ResultRow> results;
+    int result;
+    while( (result = sqlite3_step( statement )) != SQLITE_DONE ) {
+        if( result != SQLITE_ROW ) {
+            connection->raise_sqlite_error( "Error reading sql result" );
+        }
 
-void SqliteArgListBuilder::append_long( long arg )
-{
-    args.push_back( new SqliteBindArgBind<long>( arg ) );
-}
+        ResultRow row;
+        row.add_values( statement );
+        results.push_back( row );
+    }
 
-void SqliteArgListBuilder::append_double( double arg )
-{
-    args.push_back( new SqliteBindArgBind<double>( arg ) );
-}
+    Value_P db_result_value;
+    int row_count = results.size();
+    if( row_count > 0 ) {
+        int col_count = results[0].get_values().size();
+        Shape result_shape( row_count, col_count );
+        db_result_value = new Value( result_shape, LOC );
+        for( vector<ResultRow>::iterator row_iterator = results.begin() ; row_iterator != results.end() ; row_iterator++ ) {
+            const vector<const ResultValue *> &row = row_iterator->get_values();
+            for( vector<const ResultValue *>::const_iterator col_iterator = row.begin() ; col_iterator != row.end() ; col_iterator++ ) {
+                (*col_iterator)->update( db_result_value->next_ravel() );
+            }
+        }
+    }
+    else {
+        db_result_value = Value::Idx0_P;
+    }
 
-void SqliteArgListBuilder::append_null( void )
-{
-    args.push_back( new SqliteBindArgNull() );
+    db_result_value->check_value( LOC );
+    return Token( TOK_APL_VALUE1, db_result_value );
 }

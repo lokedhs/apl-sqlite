@@ -22,42 +22,22 @@
 #define SQLITE_ARG_LIST_BUILDER_HH
 
 #include "apl-sqlite.hh"
-#include "Sqlite3Connection.hh"
+#include "SqliteConnection.hh"
 #include "ArgListBuilder.hh"
-
-class SqliteBindArg {
-public:
-    virtual ~SqliteBindArg() {}
-    virtual void bind( sqlite3_stmt *statement, int pos ) = 0;
-};
-
-template<class T>
-class SqliteBindArgBind : public SqliteBindArg {
-public:
-    SqliteBindArgBind( const T &arg_in ) : arg( arg_in ) {}
-    virtual void bind( sqlite3_stmt *statement, int pos );
-
-private:
-    T arg;
-};
-
-class SqliteBindArgNull : public SqliteBindArg {
-public:
-    virtual void bind( sqlite3_stmt *statement, int pos );    
-};
 
 class SqliteArgListBuilder : public ArgListBuilder {
 public:
-    SqliteArgListBuilder() {}
+    SqliteArgListBuilder( SqliteConnection *connection_in, const string &sql );
     virtual ~SqliteArgListBuilder();
-    virtual void append_string( const string &arg );
-    virtual void append_long( long arg );
-    virtual void append_double( double arg );
-    virtual void append_null( void );
-    void bind_args( sqlite3_stmt *statement );
+    virtual void append_string( const string &arg, int pos );
+    virtual void append_long( long arg, int pos );
+    virtual void append_double( double arg, int pos );
+    virtual void append_null( int pos );
+    virtual Token run_query( void );
 
 private:
-    vector<SqliteBindArg *> args;
+    SqliteConnection *connection;
+    sqlite3_stmt *statement;
 };
 
 #endif
