@@ -40,4 +40,6 @@ inline std::string to_string(const UCS_string & ucs)
     return string((const char *)(utf.get_items()), utf.size());
 }
 
+Value_P make_string_cell( const std::string &string, const char *loc );
+
 #endif

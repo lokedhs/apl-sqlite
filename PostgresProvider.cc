@@ -30,9 +30,19 @@ static PostgresConnection *create_postgres_connection( Value_P B )
 
     string connect_args = to_string( B->get_UCS_ravel() );
 
-    const char *keywords[] = { "conninfo", NULL };
+    const char *keywords[] = { "dbname", NULL };
     const char *values[] = { connect_args.c_str(), NULL };
     PGconn *db = PQconnectdbParams( keywords, values, 1 );
+
+    ConnStatusType status = PQstatus( db );
+    if( status != CONNECTION_OK ) {
+        stringstream out;
+        out << "Error connecting to Postgres database: " << PQerrorMessage( db );
+        Workspace::more_error() = out.str().c_str();
+        PQfinish( db );
+        DOMAIN_ERROR;
+    }
+
     return new PostgresConnection( db );
 }
 

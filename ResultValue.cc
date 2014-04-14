@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "apl-sqlite.hh"
 #include "ResultValue.hh"
 
 #include "Value.hh"
@@ -25,26 +26,6 @@
 #include "FloatCell.hh"
 #include "CharCell.hh"
 #include "PointerCell.hh"
-
-static const UCS_string ucs_string_from_string( const std::string &string )
-{
-    size_t length = string.size();
-    const char *buf = string.c_str();
-    UTF8_string utf( (const UTF8 *)buf, length );
-    return UCS_string( utf );
-}
-
-static Value_P make_string_cell( const std::string &string, const char *loc )
-{
-    UCS_string s = ucs_string_from_string( string );
-    Shape shape( s.size() );
-    Value_P cell( new Value( shape, loc ) );
-    for( int i = 0 ; i < s.size() ; i++ ) {
-        new (cell->next_ravel()) CharCell( s[i] );
-    }
-    cell->check_value( loc );
-    return cell;
-}
 
 void IntResultValue::update( Cell *cell ) const
 {

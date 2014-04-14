@@ -19,7 +19,7 @@
 APL_DIST = $(HOME)/src/apl
 CXX = c++
 CXXFLAGS = -Wall -Wno-sign-compare -fPIC -g -I$(APL_DIST)/src -I/usr/include/postgresql
-LIBS = -lsqlite3
+LIBS = -lsqlite3 -lpq
 
 OBJS = apl-sqlite.o SqliteConnection.o ResultValue.o SqliteArgListBuilder.o SqliteProvider.o \
 	PostgresConnection.o PostgresArgListBuilder.o PostgresProvider.o

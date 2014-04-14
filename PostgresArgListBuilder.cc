@@ -23,20 +23,84 @@
 #include <string.h>
 #include "ResultValue.hh"
 
+template<class T>
+PostgresBindArg<T>::~PostgresBindArg()
+{
+    if( string_arg != NULL ) {
+        free( string_arg );
+    }
+}
+
+
+template<>
+void PostgresBindArg<string>::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
+{
+    types[pos] = 1043; // VARCHAROID
+    stringstream out;
+    out << arg;
+    string_arg = strdup( out.str().c_str() );
+    if( string_arg == NULL ) {
+        abort();
+    }
+    values[pos] = string_arg;
+    lengths[pos] = 0;
+    formats[pos] = 0;    
+}
+
+template<>
+void PostgresBindArg<long>::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
+{
+    types[pos] = 20; // INT8OID
+    stringstream out;
+    out << arg;
+    string_arg = strdup( out.str().c_str() );
+    if( string_arg == NULL ) {
+        abort();
+    }
+    values[pos] = string_arg;
+    lengths[pos] = 0;
+    formats[pos] = 0;
+}
+
+template<>
+void PostgresBindArg<double>::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
+{
+    types[pos] = 701; // FLOAT8OID
+    stringstream out;
+    out << arg;
+    string_arg = strdup( out.str().c_str() );
+    if( string_arg == NULL ) {
+        abort();
+    }
+    values[pos] = string_arg;
+    lengths[pos] = 0;
+    formats[pos] = 0;
+}
+
+void PostgresNullArg::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
+{
+    types[pos] = 0;
+    values[pos] = NULL;
+    lengths[pos] = 0;
+    formats[pos] = 0;
+}
+
 PostgresArgListBuilder::PostgresArgListBuilder( PostgresConnection *connection_in, const string &sql_in )
     : connection( connection_in ), sql( sql_in )
 {
 }
 
-void PostgresNullArg::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
+PostgresArgListBuilder::~PostgresArgListBuilder()
 {
-    
+    for( vector<PostgresArg *>::iterator i = args.begin() ; i != args.end() ; i++ ) {
+        delete *i;
+    }
 }
 
 void PostgresArgListBuilder::append_string( const string &arg, int pos )
 {
     Assert( static_cast<size_t>( pos ) == args.size() );
-    args.push_back( new PostgresBindArg<const string>( arg ) );
+    args.push_back( new PostgresBindArg<string>( arg ) );
 }
 
 void PostgresArgListBuilder::append_long( long arg, int pos )
@@ -60,17 +124,57 @@ void PostgresArgListBuilder::append_null( int pos )
 Token PostgresArgListBuilder::run_query()
 {
     int n = args.size();
-    DynArray( Oid, types, n );
-    DynArray( const char *, values, n );
-    DynArray( int, lengths, n );
-    DynArray( int, formats, n );
+    int array_len = n == 0 ? 1 : n;
+    DynArray( Oid, types, array_len );
+    DynArray( const char *, values, array_len );
+    DynArray( int, lengths, array_len );
+    DynArray( int, formats, array_len );
 
     for( int i = 0 ; i < n ; i++ ) {
         PostgresArg *arg = args[i];
         arg->update( types, values, lengths, formats, i );
     }
 
-    PGresult result = PQexecParams( connection->get_db(), sql.c_str(), n,
-                                    types, values, lengths, formats,
-                                    xx );
+    PostgresResultWrapper result( PQexecParams( connection->get_db(), sql.c_str(), n,
+                                                NULL, values, lengths, formats,
+                                                0 ) );
+    ExecStatusType status = PQresultStatus( result.get_result() );
+    Value_P db_result_value;
+    if( status == PGRES_COMMAND_OK ) {
+        db_result_value = Value::Str0_P;
+    }
+    else if( status == PGRES_TUPLES_OK ) {
+        int rows = PQntuples( result.get_result() );
+        int cols = PQnfields( result.get_result() );
+        Shape shape( rows, cols );
+        db_result_value = new Value( shape, LOC );
+        for( int row = 0 ; row < rows ; row++ ) {
+            for( int col = 0 ; col < cols ; col++ ) {
+                if( PQgetisnull( result.get_result(), row, col ) ) {
+                    new (db_result_value->next_ravel()) PointerCell( Value::Idx0_P );
+                }
+                else {
+                    Oid col_type = PQftype( result.get_result(), col );
+                    COUT << "col type:" << col_type << endl;
+                    char *value = PQgetvalue( result.get_result(), row, col );
+//                    if( col_type == 1043 ) {
+                        new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
+//                    }
+//                    else {
+//                        new (db_result_value->next_ravel()) IntCell( 123 );
+//                    }
+                }
+            }
+        }
+    }
+    else {
+        stringstream out;
+        out << "Error executing query: " << PQresStatus( status ) << endl
+            << "Message: " << PQresultErrorMessage( result.get_result() );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
+
+    db_result_value->check_value( LOC );
+    return Token( TOK_APL_VALUE1, db_result_value );
 }

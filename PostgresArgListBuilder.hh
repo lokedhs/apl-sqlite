@@ -29,18 +29,20 @@ class PostgresArg
 {
 public:
     virtual ~PostgresArg() {}
-    virtual void update( Oid *types, const char **values, int *lengths, int *formats, int pos );
+    virtual void update( Oid *types, const char **values, int *lengths, int *formats, int pos ) = 0;
 };
 
 template<class T>
 class PostgresBindArg : public PostgresArg
 {
 public:
-    virtual ~PostgresBindArg() {}
-    PostgresBindArg( T arg_in ) : arg( arg_in ) {}
+    PostgresBindArg( const T &arg_in ) : arg( arg_in ), string_arg( NULL ) {}
+    virtual ~PostgresBindArg();
+    virtual void update( Oid *types, const char **values, int *lengths, int *formats, int pos );
 
 private:
-    T arg;
+    const T arg;
+    char *string_arg;
 };
 
 class PostgresNullArg : public PostgresArg
@@ -64,6 +66,16 @@ private:
     PostgresConnection *connection;
     string sql;
     vector<PostgresArg *> args;
+};
+
+class PostgresResultWrapper {
+public:
+    PostgresResultWrapper( PGresult *result_in ) : result( result_in ) {}
+    ~PostgresResultWrapper() { PQclear( result ); }
+    PGresult *get_result( void ) { return result; }
+
+private:
+    PGresult *result;
 };
 
 #endif

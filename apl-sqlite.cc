@@ -31,6 +31,7 @@
 #include "ResultValue.hh"
 #include "Provider.hh"
 #include "SqliteProvider.hh"
+#include "PostgresProvider.hh"
 
 typedef vector<Connection *> DbConnectionVector;
 
@@ -49,6 +50,7 @@ static void add_provider( Provider *provider )
 static void init_provider_map( void )
 {
     add_provider( new SqliteProvider() );
+    add_provider( new PostgresProvider() );
 }
 
 static Token list_functions( ostream &out )
@@ -77,7 +79,7 @@ static Token open_database( Value_P A, Value_P B )
 {
     if( !A->is_apl_char_vector() ) {
         Workspace::more_error() = "Illegal database name";
-        DOMAIN_ERROR;
+        VALUE_ERROR;
     }
     string type = to_string( A->get_UCS_ravel() );
     map<const string, Provider *>::iterator provider_iterator = providers.find( type );
@@ -85,7 +87,7 @@ static Token open_database( Value_P A, Value_P B )
         stringstream out;
         out << "Unknown database type: " << type;
         Workspace::more_error() = out.str().c_str();
-        DOMAIN_ERROR;
+        VALUE_ERROR;
     }
 
     int connection_index = find_free_connection();
@@ -297,4 +299,24 @@ void *get_function_mux( const char *function_name )
     if( strcmp( function_name, "eval_AXB" ) == 0 )      return (void *)&eval_AXB;
     if( strcmp( function_name, "close_fun" ) == 0 )     return (void *)&close_fun;
     return 0;
+}
+
+static const UCS_string ucs_string_from_string( const std::string &string )
+{
+    size_t length = string.size();
+    const char *buf = string.c_str();
+    UTF8_string utf( (const UTF8 *)buf, length );
+    return UCS_string( utf );
+}
+
+Value_P make_string_cell( const std::string &string, const char *loc )
+{
+    UCS_string s = ucs_string_from_string( string );
+    Shape shape( s.size() );
+    Value_P cell( new Value( shape, loc ) );
+    for( int i = 0 ; i < s.size() ; i++ ) {
+        new (cell->next_ravel()) CharCell( s[i] );
+    }
+    cell->check_value( loc );
+    return cell;
 }
