@@ -190,7 +190,7 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
                     arg_list->append_long( cell.get_int_value(), i );
                 }
                 else if( cell.is_float_cell() ) {
-                    arg_list->append_long( cell.get_real_value(), i );
+                    arg_list->append_double( cell.get_real_value(), i );
                 }
                 else {
                     Value_P value = cell.to_value( LOC );

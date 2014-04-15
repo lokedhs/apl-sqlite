@@ -34,5 +34,5 @@ ArgListBuilder *PostgresConnection::make_prepared_query( const string &sql )
 
 ArgListBuilder *PostgresConnection::make_prepared_update( const string &sql )
 {
-    Assert_fatal(false);
+    return new PostgresArgListBuilder( this, sql );    
 }

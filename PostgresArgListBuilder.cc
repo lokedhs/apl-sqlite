@@ -67,7 +67,7 @@ void PostgresBindArg<double>::update( Oid *types, const char **values, int *leng
 {
     types[pos] = 701; // FLOAT8OID
     stringstream out;
-    out << arg;
+    out << setprecision(20) << arg;
     string_arg = strdup( out.str().c_str() );
     if( string_arg == NULL ) {
         abort();
@@ -190,7 +190,7 @@ Token PostgresArgListBuilder::run_query()
                         ) {
                         update_int_cell( db_result_value->next_ravel(), value );
                     }
-                    else if( col_type == 1700 ) {
+                    else if( col_type == 1700 ) { // NUMERICOID
                         if( strchr( value, '.' ) == NULL ) {
                             update_int_cell( db_result_value->next_ravel(), value );
                         }
