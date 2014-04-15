@@ -199,7 +199,12 @@ Token PostgresArgListBuilder::run_query()
                         }
                     }
                     else {
-                        new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
+                        if( *value == 0 ) {
+                            new (db_result_value->next_ravel()) PointerCell( Value::Str0_P );
+                        }
+                        else {
+                            new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
+                        }
                     }
                 }
             }
