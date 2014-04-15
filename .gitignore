@@ -1,5 +1,6 @@
 *~
 *.o
 *.so
+*.dylib
 .apl.history
 .apl.history-
