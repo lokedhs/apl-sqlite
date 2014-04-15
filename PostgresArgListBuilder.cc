@@ -121,6 +121,35 @@ void PostgresArgListBuilder::append_null( int pos )
     args.push_back( new PostgresNullArg() );
 }
 
+static void update_int_cell( Cell *cell, char *content )
+{
+    if( *content == 0 ) {
+        Workspace::more_error() = "Numeric content from database was empty";
+        DOMAIN_ERROR;
+    }
+
+    char *endptr;
+    long n = strtol( content, &endptr, 10 );
+    if( *endptr != 0 ) {
+        Workspace::more_error() = "Error parsing values returned from database";
+        DOMAIN_ERROR;
+    }
+
+    new (cell) IntCell( n );
+}
+
+static void update_double_cell( Cell *cell, char *content )
+{
+    char *endptr;
+    double n = strtod( content, &endptr );
+    if( *endptr != 0 ) {
+        Workspace::more_error() = "Error parsing decimal numbers returned from database";
+        DOMAIN_ERROR;
+    }
+
+    new (cell) FloatCell( n );
+}
+
 Token PostgresArgListBuilder::run_query()
 {
     int n = args.size();
@@ -155,14 +184,23 @@ Token PostgresArgListBuilder::run_query()
                 }
                 else {
                     Oid col_type = PQftype( result.get_result(), col );
-                    COUT << "col type:" << col_type << endl;
                     char *value = PQgetvalue( result.get_result(), row, col );
-//                    if( col_type == 1043 ) {
+                    if( col_type == 23 // INT4OID
+                        || col_type == 20 // INT8OID
+                        ) {
+                        update_int_cell( db_result_value->next_ravel(), value );
+                    }
+                    else if( col_type == 1700 ) {
+                        if( strchr( value, '.' ) == NULL ) {
+                            update_int_cell( db_result_value->next_ravel(), value );
+                        }
+                        else {
+                            update_double_cell( db_result_value->next_ravel(), value );
+                        }
+                    }
+                    else {
                         new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
-//                    }
-//                    else {
-//                        new (db_result_value->next_ravel()) IntCell( 123 );
-//                    }
+                    }
                 }
             }
         }
