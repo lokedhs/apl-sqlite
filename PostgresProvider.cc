@@ -43,6 +43,15 @@ static PostgresConnection *create_postgres_connection( Value_P B )
         DOMAIN_ERROR;
     }
 
+    int result = PQsetClientEncoding( db, "UTF-8" );
+    if( result != 0 ) {
+        stringstream out;
+        out << "Unable to set encoding to UTF-8: " << PQerrorMessage( db );
+        Workspace::more_error() = out.str().c_str();
+        PQfinish( db );
+        DOMAIN_ERROR;
+    }
+
     return new PostgresConnection( db );
 }
 
