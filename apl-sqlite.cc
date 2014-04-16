@@ -59,7 +59,10 @@ static Token list_functions( ostream &out )
         << "name FN[1] args     - open database. Returns reference ID" << endl
         << "FN[2] ref           - close database" << endl
         << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl
-        << "ref FN[4] query ... - send SQL update (remaining params are bind args)" << endl;
+        << "ref FN[4] query ... - send SQL update (remaining params are bind args)" << endl
+        << "FN[5] ref           - begin transaction" << endl
+        << "FN[6] ref           - commit transaction" << endl
+        << "FN[7] ref           - rollback transaction" << endl;
     return Token(TOK_APL_VALUE1, Value::Str0_P);
 }
 
@@ -218,14 +221,35 @@ static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
     }
 }
 
-Token run_query( APL_Float qct, Value_P A, Value_P B )
+static Token run_query( APL_Float qct, Value_P A, Value_P B )
 {
     return run_generic( qct, A, B, true );
 }
 
-Token run_update( APL_Float qct, Value_P A, Value_P B )
+static Token run_update( APL_Float qct, Value_P A, Value_P B )
 {
     return run_generic( qct, A, B, false );
+}
+
+static Token run_transaction_begin( APL_Float qct, Value_P B )
+{
+    Connection *conn = value_to_db_id( qct, B );
+    conn->transaction_begin();
+    return Token( TOK_APL_VALUE1, Value::Idx0_P );
+}
+
+static Token run_transaction_commit( APL_Float qct, Value_P B )
+{
+    Connection *conn = value_to_db_id( qct, B );
+    conn->transaction_commit();
+    return Token( TOK_APL_VALUE1, Value::Idx0_P );
+}
+
+static Token run_transaction_rollback( APL_Float qct, Value_P B )
+{
+    Connection *conn = value_to_db_id( qct, B );
+    conn->transaction_rollback();
+    return Token( TOK_APL_VALUE1, Value::Idx0_P );
 }
 
 Fun_signature get_signature()
@@ -259,6 +283,15 @@ Token eval_XB(Value_P X, Value_P B)
 
     case 2:
         return close_database( qct, B );
+
+    case 5:
+        return run_transaction_begin( qct, B );
+
+    case 6:
+        return run_transaction_commit( qct, B );
+
+    case 7:
+        return run_transaction_rollback( qct, B );
 
     default:
         Workspace::more_error() = "Illegal function number";

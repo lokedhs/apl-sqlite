@@ -36,3 +36,36 @@ ArgListBuilder *PostgresConnection::make_prepared_update( const string &sql )
 {
     return new PostgresArgListBuilder( this, sql );    
 }
+
+void PostgresConnection::transaction_begin( void )
+{
+    PostgresResultWrapper result( PQexec( db, "begin" ) );
+    if( PQresultStatus( result.get_result() ) != PGRES_COMMAND_OK ) {
+        stringstream out;
+        out << "Error when calling begin: " << PQresultErrorMessage( result.get_result() );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
+}
+
+void PostgresConnection::transaction_commit( void )
+{
+    PostgresResultWrapper result( PQexec( db, "commit" ) );
+    if( PQresultStatus( result.get_result() ) != PGRES_COMMAND_OK ) {
+        stringstream out;
+        out << "Error when calling commit: " << PQresultErrorMessage( result.get_result() );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
+}
+
+void PostgresConnection::transaction_rollback( void )
+{
+    PostgresResultWrapper result( PQexec( db, "rollback" ) );
+    if( PQresultStatus( result.get_result() ) != PGRES_COMMAND_OK ) {
+        stringstream out;
+        out << "Error when calling rollback: " << PQresultErrorMessage( result.get_result() );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;
+    }
+}

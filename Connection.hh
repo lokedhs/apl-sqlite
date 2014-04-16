@@ -32,9 +32,9 @@ public:
     virtual ~Connection() {}
     virtual ArgListBuilder *make_prepared_query( const string &sql ) = 0;
     virtual ArgListBuilder *make_prepared_update( const string &sql ) = 0;
-    virtual void transaction_begin() = 0;
-    virtual void transaction_commit() = 0;
-    virtual void transaction_rollback() = 0;
+    virtual void transaction_begin( void ) = 0;
+    virtual void transaction_commit( void ) = 0;
+    virtual void transaction_rollback( void ) = 0;
 };
 
 #endif
