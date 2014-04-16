@@ -58,8 +58,8 @@ static Token list_functions( ostream &out )
     out << "Available function numbers:" << endl
         << "name FN[1] args     - open database. Returns reference ID" << endl
         << "FN[2] ref           - close database" << endl
-        << "ref FN[3] query ... - send SQL query (remaining params are bind args)" << endl
-        << "ref FN[4] query ... - send SQL update (remaining params are bind args)" << endl
+        << "query FN[3,db] params  - send SQL query (remaining params are bind args)" << endl
+        << "query FN[4,db] params  - send SQL update (remaining params are bind args)" << endl
         << "FN[5] ref           - begin transaction" << endl
         << "FN[6] ref           - commit transaction" << endl
         << "FN[7] ref           - rollback transaction" << endl;
@@ -105,14 +105,9 @@ static void throw_illegal_db_id( void )
     DOMAIN_ERROR;
 }
 
-static Connection *value_to_db_id( APL_Float qct, Value_P value )
+static Connection *db_id_to_connection( int db_id )
 {
-    if( !value->is_int_skalar( qct ) ) {
-        throw_illegal_db_id();
-    }
-
-    int db_id = value->get_ravel( 0 ).get_int_value();
-    if( db_id < 0 || db_id >= (int)connections.size() ) {
+   if( db_id < 0 || db_id >= (int)connections.size() ) {
         throw_illegal_db_id();
     }
     Connection *conn = connections[db_id];
@@ -122,6 +117,16 @@ static Connection *value_to_db_id( APL_Float qct, Value_P value )
 
     return conn;
 }
+
+static Connection *value_to_db_id( APL_Float qct, Value_P value )
+{
+    if( !value->is_int_skalar( qct ) ) {
+        throw_illegal_db_id();
+    }
+
+    int db_id = value->get_ravel( 0 ).get_int_value();
+    return db_id_to_connection( db_id );
+ }
 
 static Token close_database( APL_Float qct, Value_P B )
 {
@@ -145,90 +150,70 @@ static Token close_database( APL_Float qct, Value_P B )
     return Token( TOK_APL_VALUE1, Value::Str0_P );
 }
 
-static Token run_generic( APL_Float qct, Value_P A, Value_P B, bool query )
+static Token run_generic( Connection *conn, Value_P A, Value_P B, bool query )
 {
-    Connection *conn = value_to_db_id( qct, A );
+    if( !A->is_char_string() ) {
+        Workspace::more_error() = "Illegal query argument type";
+        VALUE_ERROR;
+    }
 
-    if( B->is_char_string() ) {
-        string statement = to_string( B->get_UCS_ravel() );
-        ArgListBuilder *builder;
-        if( query ) {
-            builder = conn->make_prepared_query( statement );
+    string statement = to_string( A->get_UCS_ravel() );
+    ArgListBuilder *builder;
+    if( query ) {
+        builder = conn->make_prepared_query( statement );
+    }
+    else {
+        builder = conn->make_prepared_update( statement );
+    }
+    auto_ptr<ArgListBuilder> arg_list( builder );
+
+    const Shape &shape = B->get_shape();
+    if( shape.get_rank() == 0 ) {
+        return arg_list->run_query();
+    }
+    else if( shape.get_rank() == 1 ) {
+        int num_args = shape.get_volume();
+        for( int i = 0 ; i < num_args ; i++ ) {
+            const Cell &cell = B->get_ravel( i );
+            if( cell.is_integer_cell() ) {
+                arg_list->append_long( cell.get_int_value(), i );
+            }
+            else if( cell.is_float_cell() ) {
+                arg_list->append_double( cell.get_real_value(), i );
+            }
+            else {
+                Value_P value = cell.to_value( LOC );
+                if( value->get_shape().get_volume() == 0 ) {
+                    arg_list->append_null( i );
+                }
+                else if( value->is_char_string() ) {
+                    arg_list->append_string( to_string( value->get_UCS_ravel() ), i );
+                }
+                else {
+                    stringstream out;
+                    out << "Illegal data type in argument " << i << " of arglist";
+                    Workspace::more_error() = out.str().c_str();
+                    VALUE_ERROR;
+                }
+            }
         }
-        else {
-            builder = conn->make_prepared_update( statement );
-        }
-        auto_ptr<ArgListBuilder> arg_list( builder );
+
         return arg_list->run_query();
     }
     else {
-        const Shape &shape = B->get_shape();
-        if( shape.get_rank() == 0 ) {
-            Workspace::more_error() = "Query arguments can't be a scalar";
-            RANK_ERROR;
-        }
-        else if( shape.get_rank() == 1 ) {
-            Value_P statement_value = B->get_ravel( 0 ).to_value( LOC );
-            if( !statement_value->is_char_string() ) {
-                Workspace::more_error() = "SQL statement does not have the right type";
-                DOMAIN_ERROR;
-            }
-
-            string statement = to_string( statement_value->get_UCS_ravel() );
-            Assert_fatal( shape.get_volume() >= 1 );
-
-            ArgListBuilder *builder;
-            if( query ) {
-                builder = conn->make_prepared_query( statement );
-            }
-            else {
-                builder = conn->make_prepared_update( statement );
-            }
-            auto_ptr<ArgListBuilder> arg_list( builder );
-
-            int num_args = shape.get_volume() - 1;
-            for( int i = 0 ; i < num_args ; i++ ) {
-                const Cell &cell = B->get_ravel( i + 1 );
-                if( cell.is_integer_cell() ) {
-                    arg_list->append_long( cell.get_int_value(), i );
-                }
-                else if( cell.is_float_cell() ) {
-                    arg_list->append_double( cell.get_real_value(), i );
-                }
-                else {
-                    Value_P value = cell.to_value( LOC );
-                    if( value->get_shape().get_volume() == 0 ) {
-                        arg_list->append_null( i );
-                    }
-                    else if( value->is_char_string() ) {
-                        arg_list->append_string( to_string( value->get_UCS_ravel() ), i );
-                    }
-                    else {
-                        stringstream out;
-                        out << "Illegal data type in argument " << i << " of arglist";
-                        Workspace::more_error() = out.str().c_str();
-                        DOMAIN_ERROR;
-                    }
-                }
-            }
-
-            return arg_list->run_query();
-        }
-        else {
-            Workspace::more_error() = "Illegal query argument";
-            DOMAIN_ERROR;
-        }
+        Workspace::more_error() = "Bind params have illegal rank";
+        VALUE_ERROR;
     }
 }
 
-static Token run_query( APL_Float qct, Value_P A, Value_P B )
+static Token run_query( Connection *conn, Value_P A, Value_P B )
 {
-    return run_generic( qct, A, B, true );
+    return run_generic( conn, A, B, true );
 }
 
-static Token run_update( APL_Float qct, Value_P A, Value_P B )
+static Token run_update( Connection *conn, Value_P A, Value_P B )
 {
-    return run_generic( qct, A, B, false );
+    return run_generic( conn, A, B, false );
 }
 
 static Token run_transaction_begin( APL_Float qct, Value_P B )
@@ -299,6 +284,16 @@ Token eval_XB(Value_P X, Value_P B)
     }
 }
 
+static Connection *param_to_db( APL_Float qct, Value_P X )
+{
+    const Shape &shape = X->get_shape();
+    if( shape.get_volume() != 2 ) {
+        Workspace::more_error() = "Database id missing from axis parameter";
+        RANK_ERROR;
+    }
+    return db_id_to_connection( X->get_ravel( 1 ).get_near_int( qct ) );
+}
+
 Token eval_AXB(const Value_P A, const Value_P X, const Value_P B)
 {
     const APL_Float qct = Workspace::get_CT();
@@ -312,10 +307,10 @@ Token eval_AXB(const Value_P A, const Value_P X, const Value_P B)
         return open_database( A, B );
 
     case 3:
-        return run_query( qct, A, B );
+        return run_query( param_to_db( qct, X ), A, B );
 
     case 4:
-        return run_update( qct, A, B );
+        return run_update( param_to_db( qct, X ), A, B );
 
     default:
         Workspace::more_error() = "Illegal function number";
