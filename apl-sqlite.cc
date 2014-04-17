@@ -168,10 +168,7 @@ static Token run_generic( Connection *conn, Value_P A, Value_P B, bool query )
     auto_ptr<ArgListBuilder> arg_list( builder );
 
     const Shape &shape = B->get_shape();
-    if( shape.get_rank() == 0 ) {
-        return arg_list->run_query();
-    }
-    else if( shape.get_rank() == 1 ) {
+    if( shape.get_rank() == 0 || shape.get_rank() == 1 ) {
         int num_args = shape.get_volume();
         for( int i = 0 ; i < num_args ; i++ ) {
             const Cell &cell = B->get_ravel( i );
