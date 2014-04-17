@@ -1,6 +1,6 @@
 #!apl -f
 
-⍝  This file contains helper definititions to make the SQL APL more easy
+⍝  This file contains helper definititions to make the SQL API more easy
 ⍝  to use. Example use:
 ⍝
 ⍝  db ← 'sqlite' SQL∆Connect '/path/to/db/file'
