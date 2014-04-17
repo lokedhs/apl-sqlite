@@ -18,7 +18,6 @@
 ⍝
 ⍝    Disconnects from the database connection given as X.
 
-
 ∇Z←X SQL∆Connect Y
 Z←X SQL[1] Y
 ∇
