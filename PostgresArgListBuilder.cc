@@ -92,9 +92,15 @@ PostgresArgListBuilder::PostgresArgListBuilder( PostgresConnection *connection_i
 
 PostgresArgListBuilder::~PostgresArgListBuilder()
 {
+    clear_args();
+}
+
+void PostgresArgListBuilder::clear_args( void )
+{
     for( vector<PostgresArg *>::iterator i = args.begin() ; i != args.end() ; i++ ) {
         delete *i;
     }
+    args.clear();
 }
 
 void PostgresArgListBuilder::append_string( const string &arg, int pos )
@@ -150,7 +156,7 @@ static void update_double_cell( Cell *cell, char *content )
     new (cell) FloatCell( n );
 }
 
-Token PostgresArgListBuilder::run_query()
+Value_P PostgresArgListBuilder::run_query( bool ignore_result )
 {
     int n = args.size();
     int array_len = n == 0 ? 1 : n;
@@ -219,5 +225,5 @@ Token PostgresArgListBuilder::run_query()
     }
 
     db_result_value->check_value( LOC );
-    return Token( TOK_APL_VALUE1, db_result_value );
+    return db_result_value;
 }

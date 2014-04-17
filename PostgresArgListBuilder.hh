@@ -60,7 +60,8 @@ public:
     virtual void append_long( long arg, int pos );
     virtual void append_double( double arg, int pos );
     virtual void append_null( int pos );
-    virtual Token run_query( void );
+    virtual Value_P run_query( bool ignore_result );
+    virtual void clear_args( void );
 
 private:
     PostgresConnection *connection;

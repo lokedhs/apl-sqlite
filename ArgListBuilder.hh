@@ -30,7 +30,8 @@ public:
     virtual void append_long( long arg, int pos ) = 0;
     virtual void append_double( double arg, int pos ) = 0;
     virtual void append_null( int pos ) = 0;
-    virtual Token run_query( void ) = 0;
+    virtual Value_P run_query( bool ignore_result ) = 0;
+    virtual void clear_args( void ) = 0;
 };
 
 #endif

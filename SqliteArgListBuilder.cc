@@ -23,8 +23,7 @@
 #include <string.h>
 #include "ResultValue.hh"
 
-SqliteArgListBuilder::SqliteArgListBuilder( SqliteConnection *connection_in, const string &sql )
-    : connection( connection_in )
+void SqliteArgListBuilder::init_sql( void )
 {
     const char *sql_charptr = sql.c_str();
     if( sqlite3_prepare_v2( connection->get_db(),
@@ -34,9 +33,21 @@ SqliteArgListBuilder::SqliteArgListBuilder( SqliteConnection *connection_in, con
     }
 }
 
+SqliteArgListBuilder::SqliteArgListBuilder( SqliteConnection *connection_in, const string &sql_in )
+    : sql( sql_in ), connection( connection_in )
+{
+    init_sql();
+}
+
 SqliteArgListBuilder::~SqliteArgListBuilder()
 {
     sqlite3_finalize( statement );
+}
+
+void SqliteArgListBuilder::clear_args( void )
+{
+    sqlite3_finalize( statement );
+    init_sql();
 }
 
 static void free_text_arg( void *arg )
@@ -69,7 +80,7 @@ void SqliteArgListBuilder::append_null( int pos )
     sqlite3_bind_null( statement, pos + 1 );
 }
 
-Token SqliteArgListBuilder::run_query( void )
+Value_P SqliteArgListBuilder::run_query( bool ignore_result )
 {
     vector<ResultRow> results;
     int result;
@@ -101,5 +112,5 @@ Token SqliteArgListBuilder::run_query( void )
     }
 
     db_result_value->check_value( LOC );
-    return Token( TOK_APL_VALUE1, db_result_value );
+    return db_result_value;
 }

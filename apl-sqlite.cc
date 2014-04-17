@@ -150,7 +150,39 @@ static Token close_database( APL_Float qct, Value_P B )
     return Token( TOK_APL_VALUE1, Value::Str0_P );
 }
 
-static Token run_generic( Connection *conn, Value_P A, Value_P B, bool query )
+static Value_P run_generic_one_query( ArgListBuilder *arg_list,
+                                      Value_P B, int start, int num_args,
+                                      bool ignore_result )
+{
+    for( int i = 0 ; i < num_args ; i++ ) {
+        const Cell &cell = B->get_ravel( start + i );
+        if( cell.is_integer_cell() ) {
+            arg_list->append_long( cell.get_int_value(), i );
+        }
+        else if( cell.is_float_cell() ) {
+            arg_list->append_double( cell.get_real_value(), i );
+        }
+        else {
+            Value_P value = cell.to_value( LOC );
+            if( value->get_shape().get_volume() == 0 ) {
+                arg_list->append_null( i );
+            }
+            else if( value->is_char_string() ) {
+                arg_list->append_string( to_string( value->get_UCS_ravel() ), i );
+            }
+            else {
+                stringstream out;
+                out << "Illegal data type in argument " << i << " of arglist";
+                Workspace::more_error() = out.str().c_str();
+                VALUE_ERROR;
+            }
+        }
+    }
+
+    return arg_list->run_query( ignore_result );
+}
+
+static Value_P run_generic( Connection *conn, Value_P A, Value_P B, bool query )
 {
     if( !A->is_char_string() ) {
         Workspace::more_error() = "Illegal query argument type";
@@ -170,47 +202,41 @@ static Token run_generic( Connection *conn, Value_P A, Value_P B, bool query )
     const Shape &shape = B->get_shape();
     if( shape.get_rank() == 0 || shape.get_rank() == 1 ) {
         int num_args = shape.get_volume();
-        for( int i = 0 ; i < num_args ; i++ ) {
-            const Cell &cell = B->get_ravel( i );
-            if( cell.is_integer_cell() ) {
-                arg_list->append_long( cell.get_int_value(), i );
-            }
-            else if( cell.is_float_cell() ) {
-                arg_list->append_double( cell.get_real_value(), i );
-            }
-            else {
-                Value_P value = cell.to_value( LOC );
-                if( value->get_shape().get_volume() == 0 ) {
-                    arg_list->append_null( i );
-                }
-                else if( value->is_char_string() ) {
-                    arg_list->append_string( to_string( value->get_UCS_ravel() ), i );
-                }
-                else {
-                    stringstream out;
-                    out << "Illegal data type in argument " << i << " of arglist";
-                    Workspace::more_error() = out.str().c_str();
-                    VALUE_ERROR;
-                }
-            }
+        return run_generic_one_query( arg_list.get(), B, 0, num_args, false );
+    }
+    else if( shape.get_rank() == 2 ) {
+        int rows = shape.get_rows();
+        int cols = shape.get_cols();
+        if( rows == 0 ) {
+            return Value::Idx0_P;
         }
-
-        return arg_list->run_query();
+        else {
+            Assert_fatal( rows > 0 );
+            Value_P result;
+            for( int row = 0 ; row < rows ; row++ ) {
+                bool not_last = row < rows - 1;
+                result = run_generic_one_query( arg_list.get(), B, row * cols, cols, not_last );
+                if( not_last ) {
+                    arg_list->clear_args();
+                }
+            }
+            return result;
+        }
     }
     else {
         Workspace::more_error() = "Bind params have illegal rank";
-        VALUE_ERROR;
+        RANK_ERROR;
     }
 }
 
 static Token run_query( Connection *conn, Value_P A, Value_P B )
 {
-    return run_generic( conn, A, B, true );
+    return Token( TOK_APL_VALUE1, run_generic( conn, A, B, true ) );
 }
 
 static Token run_update( Connection *conn, Value_P A, Value_P B )
 {
-    return run_generic( conn, A, B, false );
+    return Token( TOK_APL_VALUE1, run_generic( conn, A, B, false ) );
 }
 
 static Token run_transaction_begin( APL_Float qct, Value_P B )
