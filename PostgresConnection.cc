@@ -69,3 +69,20 @@ void PostgresConnection::transaction_rollback( void )
         DOMAIN_ERROR;
     }
 }
+
+void PostgresConnection::fill_tables( vector<string> &tables )
+{
+    PostgresResultWrapper result( PQexec( db, "select tablename from pg_tables where schemaname = 'public'" ) );
+    ExecStatusType status = PQresultStatus( result.get_result() );
+    if( status != PGRES_TUPLES_OK ) {
+        stringstream out;
+        out << "Error getting list of tables: " << PQresultErrorMessage( result.get_result() );
+        Workspace::more_error() = out.str().c_str();
+        DOMAIN_ERROR;            
+    }
+
+    int rows = PQntuples( result.get_result() );
+    for( int row = 0 ; row < rows ; row++ ) {
+        tables.push_back( PQgetvalue( result.get_result(), row, 0 ) );
+    }
+}
