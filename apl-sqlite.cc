@@ -62,7 +62,8 @@ static Token list_functions( ostream &out )
         << "query FN[4,db] params  - send SQL update (remaining params are bind args)" << endl
         << "FN[5] ref           - begin transaction" << endl
         << "FN[6] ref           - commit transaction" << endl
-        << "FN[7] ref           - rollback transaction" << endl;
+        << "FN[7] ref           - rollback transaction" << endl
+        << "FN[8] ref           - list tables" << endl;
     return Token(TOK_APL_VALUE1, Value::Str0_P);
 }
 
@@ -260,6 +261,22 @@ static Token run_transaction_rollback( APL_Float qct, Value_P B )
     return Token( TOK_APL_VALUE1, Value::Idx0_P );
 }
 
+static Token show_tables( APL_Float qct, Value_P B )
+{
+    Connection *conn = value_to_db_id( qct, B );
+    vector<string> tables;
+    conn->fill_tables( tables );
+
+    Shape shape( tables.size () );
+    Value_P value = new Value( shape, LOC );
+    for( vector<string>::iterator i = tables.begin() ; i != tables.end() ; i++ ) {
+        new (value->next_ravel()) PointerCell( make_string_cell( *i, LOC ) );
+    }
+
+    value->check_value( LOC );
+    return Token( TOK_APL_VALUE1, value );
+}
+
 Fun_signature get_signature()
 {
     init_provider_map();
@@ -300,6 +317,9 @@ Token eval_XB(Value_P X, Value_P B)
 
     case 7:
         return run_transaction_rollback( qct, B );
+
+    case 8:
+        return show_tables( qct, B );
 
     default:
         Workspace::more_error() = "Illegal function number";

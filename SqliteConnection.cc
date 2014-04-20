@@ -70,3 +70,30 @@ void SqliteConnection::transaction_rollback()
 {
     run_simple( "rollback" );
 }
+
+void SqliteConnection::fill_tables( vector<string> &tables )
+{
+    sqlite3_stmt *statement;
+    if( sqlite3_prepare_v2( get_db(), "select name from sqlite_master where type = 'table'", -1,
+                            &statement, NULL ) != SQLITE_OK ) {
+        raise_sqlite_error( "Error getting table names" );
+    }
+
+    int result;
+    while( (result = sqlite3_step( statement )) != SQLITE_DONE ) {
+        if( result != SQLITE_ROW ) {
+            sqlite3_finalize( statement );
+            raise_sqlite_error( "Error getting next table name" );
+        }
+
+        int type = sqlite3_column_type( statement, 0 );
+        if( type != SQLITE_TEXT ) {
+            sqlite3_finalize( statement );
+            raise_sqlite_error( "Table name is not a text column" );
+        }
+
+        tables.push_back( reinterpret_cast<const char *>( sqlite3_column_text( statement, 0 ) ) );
+    }
+
+    sqlite3_finalize( statement );
+}

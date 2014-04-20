@@ -37,6 +37,8 @@ public:
     virtual void transaction_commit( void );
     virtual void transaction_rollback( void );
 
+    virtual void fill_tables( vector<string> &tables ) {}
+
     PGconn *get_db() { return db; }
 
 private:

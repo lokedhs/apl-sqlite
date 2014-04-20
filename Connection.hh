@@ -35,6 +35,7 @@ public:
     virtual void transaction_begin( void ) = 0;
     virtual void transaction_commit( void ) = 0;
     virtual void transaction_rollback( void ) = 0;
+    virtual void fill_tables( vector<string> &tables ) = 0;
 };
 
 #endif
