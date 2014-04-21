@@ -45,3 +45,7 @@ Z←SQL[6] Y
 ∇Z←SQL∆Rollback Y
 Z←SQL[7] Y
 ∇
+
+∇Z←SQL∆Tables Y
+Z←SQL[8] Y
+∇
