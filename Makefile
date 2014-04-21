@@ -32,7 +32,7 @@ else
 SHARED_FLAGS = -shared
 LIBRARY_EXT = so
 endif
-LIBNAME = lib_sqlite.$(LIBRARY_EXT)
+LIBNAME = lib_sql.$(LIBRARY_EXT)
 
 all:		$(LIBNAME)
 

@@ -49,3 +49,16 @@ Z←SQL[7] Y
 ∇Z←SQL∆Tables Y
 Z←SQL[8] Y
 ∇
+
+∇sql∆∆load_library;result
+→(0≠⎕NC 'SQL')/skip
+result ← 'lib_sql.so' ⎕FX 'SQL'
+→('SQL'≡result)/skip
+⎕ ← 'Error loading native library'
+skip:
+∇
+
+sql∆∆load_library
+)erase sql∆∆load_library
+
+⎕←'SQL lib loaded'
