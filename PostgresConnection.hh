@@ -38,6 +38,7 @@ public:
     virtual void transaction_rollback( void );
 
     virtual void fill_tables( vector<string> &tables );
+    virtual const string make_positional_param( int pos );
 
     PGconn *get_db() { return db; }
 

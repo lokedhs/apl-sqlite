@@ -86,3 +86,10 @@ void PostgresConnection::fill_tables( vector<string> &tables )
         tables.push_back( PQgetvalue( result.get_result(), row, 0 ) );
     }
 }
+
+const string PostgresConnection::make_positional_param( int pos )
+{
+    stringstream out;
+    out << "$" << (pos + 1);
+    return out.str();
+}

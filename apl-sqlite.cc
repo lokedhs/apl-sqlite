@@ -190,7 +190,7 @@ static Value_P run_generic( Connection *conn, Value_P A, Value_P B, bool query )
         VALUE_ERROR;
     }
 
-    string statement = to_string( A->get_UCS_ravel() );
+    string statement = conn->replace_bind_args( to_string( A->get_UCS_ravel() ) );
     ArgListBuilder *builder;
     if( query ) {
         builder = conn->make_prepared_query( statement );

@@ -18,27 +18,20 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONNECTION_HH
-#define CONNECTION_HH
+#include "Connection.hh"
 
-#include "apl-sqlite.hh"
-#include "ArgListBuilder.hh"
-
-#include <stdlib.h>
-
-class Connection
+const string Connection::replace_bind_args( const string &sql )
 {
-public:
-    virtual ~Connection() {}
-    virtual ArgListBuilder *make_prepared_query( const string &sql ) = 0;
-    virtual ArgListBuilder *make_prepared_update( const string &sql ) = 0;
-    virtual void transaction_begin( void ) = 0;
-    virtual void transaction_commit( void ) = 0;
-    virtual void transaction_rollback( void ) = 0;
-    virtual void fill_tables( vector<string> &tables ) = 0;
-    virtual const string make_positional_param( int pos ) = 0;
-
-    virtual const string replace_bind_args( const string &sql );
-};
-
-#endif
+    stringstream out;
+    int pos = 0;
+    for( size_t i = 0 ; i < sql.size() ; i++ ) {
+        char ch = sql[i];
+        if( ch == '?' ) {
+            out << make_positional_param( pos++ );
+        }
+        else {
+            out << ch;
+        }
+    }
+    return out.str();
+}

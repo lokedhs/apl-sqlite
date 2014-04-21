@@ -97,3 +97,8 @@ void SqliteConnection::fill_tables( vector<string> &tables )
 
     sqlite3_finalize( statement );
 }
+
+const string SqliteConnection::make_positional_param( int pos )
+{
+    return "?";
+}

@@ -38,6 +38,7 @@ public:
     virtual void transaction_rollback();
 
     virtual void fill_tables( vector<string> &tables );
+    virtual const string make_positional_param( int pos );
 
     void raise_sqlite_error( const string &message );
     sqlite3 *get_db( void ) { return db; }
