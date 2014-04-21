@@ -11,8 +11,6 @@
 ⍝  results ← 'select * from foo where a > ?' SQL∆Select[db] 100
 ⍝
 ⍝    Executes the query given in X with the bind parameters in Y.
-⍝    The symbols to use for bind parameters depends on the inderlying
-⍝    database. SQLite uses ?. PostgreSQL uses $1, $2, $3, etc...
 ⍝
 ⍝  SQL∆Disconnect db
 ⍝
