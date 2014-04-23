@@ -48,11 +48,32 @@ Z←SQL[7] Y
 Z←SQL[8] Y
 ∇
 
+∇Z←X (F SQL∆WithTransaction FINDDB) Y;result
+  SQL∆Begin FINDDB
+
+  →(0≠⎕NC 'X')/dyadic
+  result ← '→rollback' ⎕EA 'F Y'
+  →commit
+
+dyadic:
+  result ← '→rollback' ⎕EA 'X F Y'
+
+commit:
+  SQL∆Commit FINDDB
+  Z ← result
+  →end
+
+rollback:
+  SQL∆Rollback FINDDB
+  ⎕ES "Transaction rolled back"
+end:
+∇
+
 ∇sql∆∆load_library;result
 →(0≠⎕NC 'SQL')/skip
 result ← 'lib_sql.so' ⎕FX 'SQL'
 →('SQL'≡result)/skip
-⎕ ← 'Error loading native library'
+⎕ES 'Error loading native library'
 skip:
 ∇
 
