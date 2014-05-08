@@ -290,6 +290,8 @@ bool close_fun( Cause cause, const NativeFunction *caller )
         delete *i;
     }
 
+    connections.clear();
+
     return false;
 }
 
