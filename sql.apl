@@ -70,10 +70,10 @@ end:
 ∇
 
 ∇sql∆∆load_library;result
-→(0≠⎕NC 'SQL')/skip
-result ← 'lib_sql.so' ⎕FX 'SQL'
-→('SQL'≡result)/skip
-⎕ES 'Error loading native library'
+  →(0≠⎕NC 'SQL')/skip
+  result ← 'lib_sql.so' ⎕FX 'SQL'
+  →('SQL'≡result)/skip
+  ⎕ES 'Error loading native library'
 skip:
 ∇
 
