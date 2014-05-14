@@ -180,36 +180,41 @@ Value_P PostgresArgListBuilder::run_query( bool ignore_result )
     }
     else if( status == PGRES_TUPLES_OK ) {
         int rows = PQntuples( result.get_result() );
-        int cols = PQnfields( result.get_result() );
-        Shape shape( rows, cols );
-        db_result_value = new Value( shape, LOC );
-        for( int row = 0 ; row < rows ; row++ ) {
-            for( int col = 0 ; col < cols ; col++ ) {
-                if( PQgetisnull( result.get_result(), row, col ) ) {
-                    new (db_result_value->next_ravel()) PointerCell( Value::Idx0_P );
-                }
-                else {
-                    Oid col_type = PQftype( result.get_result(), col );
-                    char *value = PQgetvalue( result.get_result(), row, col );
-                    if( col_type == 23 // INT4OID
-                        || col_type == 20 // INT8OID
-                        ) {
-                        update_int_cell( db_result_value->next_ravel(), value );
-                    }
-                    else if( col_type == 1700 ) { // NUMERICOID
-                        if( strchr( value, '.' ) == NULL ) {
-                            update_int_cell( db_result_value->next_ravel(), value );
-                        }
-                        else {
-                            update_double_cell( db_result_value->next_ravel(), value );
-                        }
+        if( rows == 0 ) {
+            db_result_value = Value::Idx0_P;
+        }
+        else {
+            int cols = PQnfields( result.get_result() );
+            Shape shape( rows, cols );
+            db_result_value = new Value( shape, LOC );
+            for( int row = 0 ; row < rows ; row++ ) {
+                for( int col = 0 ; col < cols ; col++ ) {
+                    if( PQgetisnull( result.get_result(), row, col ) ) {
+                        new (db_result_value->next_ravel()) PointerCell( Value::Idx0_P );
                     }
                     else {
-                        if( *value == 0 ) {
-                            new (db_result_value->next_ravel()) PointerCell( Value::Str0_P );
+                        Oid col_type = PQftype( result.get_result(), col );
+                        char *value = PQgetvalue( result.get_result(), row, col );
+                        if( col_type == 23 // INT4OID
+                            || col_type == 20 // INT8OID
+                            ) {
+                            update_int_cell( db_result_value->next_ravel(), value );
+                        }
+                        else if( col_type == 1700 ) { // NUMERICOID
+                            if( strchr( value, '.' ) == NULL ) {
+                                update_int_cell( db_result_value->next_ravel(), value );
+                            }
+                            else {
+                                update_double_cell( db_result_value->next_ravel(), value );
+                            }
                         }
                         else {
-                            new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
+                            if( *value == 0 ) {
+                                new (db_result_value->next_ravel()) PointerCell( Value::Str0_P );
+                            }
+                            else {
+                                new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
+                            }
                         }
                     }
                 }
