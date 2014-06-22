@@ -20,6 +20,7 @@
 
 #include "apl-sqlite.hh"
 #include "SqliteConnection.hh"
+#include "NativeFunction.hh"
 
 #include <vector>
 #include <map>
@@ -283,8 +284,15 @@ Fun_signature get_signature()
     return SIG_Z_A_F2_B;
 }
 
-void close_fun( Cause cause )
+bool close_fun( Cause cause, const NativeFunction *caller )
 {
+    for( DbConnectionVector::iterator i = connections.begin() ; i != connections.end() ; i++ ) {
+        delete *i;
+    }
+
+    connections.clear();
+
+    return false;
 }
 
 Token eval_B( Value_P B )

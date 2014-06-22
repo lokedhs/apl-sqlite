@@ -32,7 +32,6 @@ public:
     virtual ArgListBuilder *make_prepared_query( const string &sql );
     virtual ArgListBuilder *make_prepared_update( const string &sql );
 
-    // Transaction methods unimplemented for now
     virtual void transaction_begin( void );
     virtual void transaction_commit( void );
     virtual void transaction_rollback( void );
