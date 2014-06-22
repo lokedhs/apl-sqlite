@@ -108,7 +108,7 @@ Value_P SqliteArgListBuilder::run_query( bool ignore_result )
         }
     }
     else {
-        db_result_value = Value::Idx0_P;
+        db_result_value = Idx0( LOC );
     }
 
     db_result_value->check_value( LOC );

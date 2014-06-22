@@ -40,7 +40,7 @@ void DoubleResultValue::update( Cell *cell ) const
 void StringResultValue::update( Cell *cell ) const
 {
     if( value.size() == 0 ) {
-        new (cell) PointerCell( Value::Str0_P );
+        new (cell) PointerCell( Str0( LOC ) );
     }
     else {
         new (cell) PointerCell( make_string_cell( value, LOC ) );
@@ -49,7 +49,7 @@ void StringResultValue::update( Cell *cell ) const
 
 void NullResultValue::update( Cell *cell ) const
 {
-    new (cell) PointerCell( Value::Idx0_P );
+    new (cell) PointerCell( Idx0( LOC ) );
 }
 
 void ResultRow::add_values( sqlite3_stmt *statement )

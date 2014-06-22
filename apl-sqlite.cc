@@ -64,7 +64,7 @@ static Token list_functions( ostream &out )
         << "FN[6] ref           - commit transaction" << endl
         << "FN[7] ref           - rollback transaction" << endl
         << "FN[8] ref           - list tables" << endl;
-    return Token(TOK_APL_VALUE1, Value::Str0_P);
+    return Token(TOK_APL_VALUE1, Str0( LOC ) );
 }
 
 static int find_free_connection( void )
@@ -148,7 +148,7 @@ static Token close_database( APL_Float qct, Value_P B )
     connections[db_id] = NULL;
     delete conn;
 
-    return Token( TOK_APL_VALUE1, Value::Str0_P );
+    return Token( TOK_APL_VALUE1, Str0( LOC ) );
 }
 
 static Value_P run_generic_one_query( ArgListBuilder *arg_list,
@@ -209,7 +209,7 @@ static Value_P run_generic( Connection *conn, Value_P A, Value_P B, bool query )
         int rows = shape.get_rows();
         int cols = shape.get_cols();
         if( rows == 0 ) {
-            return Value::Idx0_P;
+            return Idx0( LOC );
         }
         else {
             Assert_fatal( rows > 0 );
@@ -244,21 +244,21 @@ static Token run_transaction_begin( APL_Float qct, Value_P B )
 {
     Connection *conn = value_to_db_id( qct, B );
     conn->transaction_begin();
-    return Token( TOK_APL_VALUE1, Value::Idx0_P );
+    return Token( TOK_APL_VALUE1, Idx0( LOC ) );
 }
 
 static Token run_transaction_commit( APL_Float qct, Value_P B )
 {
     Connection *conn = value_to_db_id( qct, B );
     conn->transaction_commit();
-    return Token( TOK_APL_VALUE1, Value::Idx0_P );
+    return Token( TOK_APL_VALUE1, Idx0( LOC ) );
 }
 
 static Token run_transaction_rollback( APL_Float qct, Value_P B )
 {
     Connection *conn = value_to_db_id( qct, B );
     conn->transaction_rollback();
-    return Token( TOK_APL_VALUE1, Value::Idx0_P );
+    return Token( TOK_APL_VALUE1, Idx0( LOC ) );
 }
 
 static Token show_tables( APL_Float qct, Value_P B )

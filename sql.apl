@@ -69,6 +69,32 @@ rollback:
 end:
 ∇
 
+⍝
+⍝ Z←L (OP trycall) R
+⍝
+⍝ Call OP for each value in ARG until the function returns
+⍝ true and return the index to that value. If none of the
+⍝ arguments returned true, return ⎕IO+(⍴L)⌈⍴R
+⍝
+⍝ The retsult of this function is similar to (L OP¨ R)⍳1
+⍝ except that the function will only be called until the first
+⍝ found element.
+⍝
+∇Z←L (OP trycall) R;result;i
+  i ← 0
+next:
+    
+∇
+
+∇Z←SYMBOL sql∆∆tryload NAME
+  →(0≠⎕NC SYMBOL)/success
+
+
+success:
+  Z←1
+∇
+  
+
 ∇sql∆∆load_library;result
   →(0≠⎕NC 'SQL')/skip
   result ← 'lib_sql.so' ⎕FX 'SQL'

@@ -176,7 +176,7 @@ Value_P PostgresArgListBuilder::run_query( bool ignore_result )
     ExecStatusType status = PQresultStatus( result.get_result() );
     Value_P db_result_value;
     if( status == PGRES_COMMAND_OK ) {
-        db_result_value = Value::Str0_P;
+        db_result_value = Str0( LOC );
     }
     else if( status == PGRES_TUPLES_OK ) {
         int rows = PQntuples( result.get_result() );
@@ -186,7 +186,7 @@ Value_P PostgresArgListBuilder::run_query( bool ignore_result )
         for( int row = 0 ; row < rows ; row++ ) {
             for( int col = 0 ; col < cols ; col++ ) {
                 if( PQgetisnull( result.get_result(), row, col ) ) {
-                    new (db_result_value->next_ravel()) PointerCell( Value::Idx0_P );
+                    new (db_result_value->next_ravel()) PointerCell( Idx0( LOC ) );
                 }
                 else {
                     Oid col_type = PQftype( result.get_result(), col );
@@ -206,7 +206,7 @@ Value_P PostgresArgListBuilder::run_query( bool ignore_result )
                     }
                     else {
                         if( *value == 0 ) {
-                            new (db_result_value->next_ravel()) PointerCell( Value::Str0_P );
+                            new (db_result_value->next_ravel()) PointerCell( Str0( LOC ) );
                         }
                         else {
                             new (db_result_value->next_ravel()) PointerCell( make_string_cell( value, LOC ) );
