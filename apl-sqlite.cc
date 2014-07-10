@@ -18,8 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"   // for HAVE_xxx macros
+
 #include "apl-sqlite.hh"
-#include "SqliteConnection.hh"
 #include "NativeFunction.hh"
 
 #include <vector>
@@ -31,8 +32,16 @@
 #include "Connection.hh"
 #include "ResultValue.hh"
 #include "Provider.hh"
-#include "SqliteProvider.hh"
-#include "PostgresProvider.hh"
+
+#ifdef HAVE_SQLITE3
+# include "SqliteConnection.hh"
+# include "SqliteProvider.hh"
+#endif
+
+#ifdef USABLE_PostgreSQL
+# include "PostgresConnection.hh"
+# include "PostgresProvider.hh"
+#endif
 
 typedef vector<Connection *> DbConnectionVector;
 
@@ -50,8 +59,20 @@ static void add_provider( Provider *provider )
 
 static void init_provider_map( void )
 {
+#ifdef HAVE_SQLITE3
     add_provider( new SqliteProvider() );
+#else
+# warning "SQLite3 unavailable since ./configure could not detect it"
+#endif
+
+#ifdef USABLE_PostgreSQL
     add_provider( new PostgresProvider() );
+#else
+# warning "PostgreSQL unavailable since ./configure could not detect it."
+# if HAVE_POSTGRESQL
+#  warning "The PostgreSQL library seems to be installed, but the header file(s) are missing"
+# endif
+#endif
 }
 
 static Token list_functions( ostream &out )
@@ -122,7 +143,7 @@ static Connection *db_id_to_connection( int db_id )
 
 static Connection *value_to_db_id( APL_Float qct, Value_P value )
 {
-    if( !value->is_int_skalar( qct ) ) {
+    if( !value->is_int_scalar( qct ) ) {
         throw_illegal_db_id();
     }
 
@@ -132,7 +153,7 @@ static Connection *value_to_db_id( APL_Float qct, Value_P value )
 
 static Token close_database( APL_Float qct, Value_P B )
 {
-    if( !B->is_int_skalar( qct ) ) {
+    if( !B->is_int_scalar( qct ) ) {
         Workspace::more_error() = "Close database command requires database id as argument";
         DOMAIN_ERROR;
     }
