@@ -22,7 +22,7 @@
 ⍝ L must be a string indicating the database type. Current supported
 ⍝ values are 'postgresql' and 'sqlite'.
 ⍝
-⍝ Y is the connection parameters which depends on the type of
+⍝ R is the connection parameters which depends on the type of
 ⍝ database.
 ⍝
 ⍝ This function returns a database handle that should be used when
