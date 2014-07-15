@@ -19,7 +19,7 @@
 */
 
 #include "apl-sqlite.hh"
-#include "ResultValue.hh"
+#include "SqliteResultValue.hh"
 
 #include "Value.hh"
 #include "IntCell.hh"

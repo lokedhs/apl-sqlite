@@ -20,7 +20,7 @@
 
 #include "apl-sqlite.hh"
 #include "SqliteConnection.hh"
-#include "ResultValue.hh"
+#include "SqliteResultValue.hh"
 #include "SqliteArgListBuilder.hh"
 
 void SqliteConnection::raise_sqlite_error( const string &message )
