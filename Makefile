@@ -37,7 +37,7 @@ LIBNAME = lib_sql.$(LIBRARY_EXT)
 all:		$(LIBNAME)
 
 $(LIBNAME):	$(OBJS)
-		$(CC) $(SHARED_FLAGS) $(CXXFLAGS) $(OBJS) -o $(LIBNAME) $(LIBS)
+		$(CXX) $(SHARED_FLAGS) $(CXXFLAGS) $(OBJS) -o $(LIBNAME) $(LIBS)
 
 clean:
 		rm -f $(OBJS) $(LIBNAME)

@@ -87,6 +87,12 @@ void PostgresConnection::fill_tables( vector<string> &tables )
     }
 }
 
+void fill_cols( const string &table, vector<ColumnDescriptor> &cols )
+{
+    (void)table;
+    (void)cols;
+}
+
 const string PostgresConnection::make_positional_param( int pos )
 {
     stringstream out;
