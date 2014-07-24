@@ -328,7 +328,15 @@ static Token show_cols( APL_Float qct, Value_P A, Value_P B )
         value = new Value( shape, LOC );
         for( vector<ColumnDescriptor>::iterator i = cols.begin() ; i != cols.end() ; i++ ) {
             new (value->next_ravel()) PointerCell( make_string_cell( i->get_name(), LOC ) );
-            new (value->next_ravel()) PointerCell( make_string_cell( i->get_type(), LOC ) );
+
+            Value_P type;
+            if( i->get_type().size() == 0 ) {
+                type = Str0( LOC );
+            }
+            else {
+                type = make_string_cell( i->get_type(), LOC );
+            }
+            new (value->next_ravel()) PointerCell( type );
         }
     }
 
