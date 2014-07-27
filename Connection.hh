@@ -29,6 +29,7 @@
 class ColumnDescriptor {
 public:
     ColumnDescriptor( const string &name_in, const string &type_in ) : name( name_in ), type( type_in ) {}
+    ColumnDescriptor operator=( ColumnDescriptor &orig ) { return ColumnDescriptor( orig.name, orig.type ); }
     const string &get_name( void ) { return name; }
     const string &get_type( void ) { return type; }
 

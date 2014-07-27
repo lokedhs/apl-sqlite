@@ -88,6 +88,18 @@
   Z←SQL[8] R
 ∇
 
+∇Z←DB SQL∆Columns TABLE
+⍝ Return an array containing information about the columns in the
+⍝ given table. Currently, the column layout is af follows;
+⍝
+⍝   Name
+⍝   Type
+⍝
+⍝ More columns containing extra informaiton may be added in a future
+⍝ release.
+  Z←DB SQL[9] TABLE
+∇
+
 ∇Z←X (F SQL∆WithTransaction FINDDB) Y;result
   SQL∆Begin FINDDB
 
