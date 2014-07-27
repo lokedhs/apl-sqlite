@@ -90,7 +90,7 @@
 
 ∇Z←DB SQL∆Columns TABLE
 ⍝ Return an array containing information about the columns in the
-⍝ given table. Currently, the column layout is af follows;
+⍝ given table. Currently, the column layout is as follows;
 ⍝
 ⍝   Name
 ⍝   Type
