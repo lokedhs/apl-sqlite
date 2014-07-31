@@ -127,6 +127,50 @@ rollback:
 end:
 ∇
 
+⍝
+⍝  Metadata for library
+⍝
+
+∇Z←SQL⍙Author
+  Z ← ,⊂'Elias Mårtenson'
+∇
+
+∇Z←SQL⍙BugEmail
+  Z ← ,⊂'bug-apl@gnu.org'
+∇
+
+∇Z←SQL⍙Documentation
+  Z ← ,⊂''
+∇
+
+∇Z←SQL⍙Download
+  Z ← ,⊂'https://github.com/lokedhs/apl-sqlite'
+∇
+
+∇Z←SQL⍙License
+  Z←,⊂'LGPL'
+∇
+
+∇Z←SQL⍙Portability
+  Z←,⊂'L3'
+∇
+
+∇Z←SQL⍙Provides
+  Z←,⊂'sql'
+∇
+
+∇Z←SQL⍙Requires
+  Z←,⊂''
+∇
+
+∇Z←SQL⍙Version
+  Z←,⊂'1.0'
+∇
+
+⍝
+⍝  Load the native library
+⍝
+
 ∇sql⍙load_library;result
   →(0≠⎕NC 'SQL')/skip
   result ← 'lib_sql' ⎕FX 'SQL'
