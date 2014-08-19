@@ -135,15 +135,15 @@ end:
 ⍝
 
 ∇Z←SQL⍙metadata
-Z ← ,[0.5] 'Author' 'Elias Mårtenson'
-Z ← Z,[1] 'BugEmail' 'bug-apl@gnu.org'
-Z ← Z,[1] 'Documentation' ''
-Z ← Z,[1] 'Download' 'https://github.com/lokedhs/apl-sqlite'
-Z ← Z,[1] 'License' 'LGPL'
-Z ← Z,[1] 'Portability' 'L3'
-Z ← Z,[1] 'Provides' 'SQL'
-Z ← Z,[1] 'Requires' ''
-Z ← Z,[1] 'Version' '1.0'
+  Z ← ,[0.5] 'Author' 'Elias Mårtenson'
+  Z ← Z,[1] 'BugEmail' 'bug-apl@gnu.org'
+  Z ← Z,[1] 'Documentation' ''
+  Z ← Z,[1] 'Download' 'https://github.com/lokedhs/apl-sqlite'
+  Z ← Z,[1] 'License' 'LGPL'
+  Z ← Z,[1] 'Portability' 'L3'
+  Z ← Z,[1] 'Provides' 'SQL'
+  Z ← Z,[1] 'Requires' ''
+  Z ← Z,[1] 'Version' '1.0'
 ∇
 
 ⍝
