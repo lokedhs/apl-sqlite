@@ -30,7 +30,6 @@ PostgresBindArg<T>::~PostgresBindArg()
     }
 }
 
-
 template<>
 void PostgresBindArg<string>::update( Oid *types, const char **values, int *lengths, int *formats, int pos )
 {
