@@ -1,7 +1,7 @@
 #!apl -f
 
-⍝  This file contains helper definititions to make the SQL API more easy
-⍝  to use. Example use:
+⍝  This file contains helper definititions to make the SQL API more
+⍝  easy to use. Example use:
 ⍝
 ⍝  db ← 'sqlite' SQL∆Connect '/path/to/db/file'
 ⍝
@@ -28,8 +28,8 @@
 ⍝⍝   - For type≡'sqlite': the argument is string pointing to the
 ⍝⍝     database file.
 ⍝⍝
-⍝⍝   - For type≡'postgresql', the argument is a standard connect string
-⍝⍝     as described in the PostgreSQL documentation.
+⍝⍝   - For type≡'postgresql', the argument is a standard connect
+⍝⍝     string as described in the PostgreSQL documentation.
 ⍝⍝
 ⍝⍝ This function returns a database handle that should be used when
 ⍝⍝ using other SQL functions. This value should be seen as an opaque
@@ -53,8 +53,8 @@
 ⍝⍝
 ⍝⍝ The axis parameter indicates the database handle.
 ⍝⍝
-⍝⍝ L is a select statement to be executed. Positional parameters can be
-⍝⍝ supplied by specifying a question mark "?" in the statemement.
+⍝⍝ L is a select statement to be executed. Positional parameters can
+⍝⍝ be supplied by specifying a question mark "?" in the statemement.
 ⍝⍝
 ⍝⍝ R is an array containing the values for the positional parameters.
 ⍝⍝ If the array is of rank 2, the statement will be executed multiple
@@ -130,15 +130,15 @@ end:
 ⍝
 
 ∇Z←SQL⍙metadata
-Z ← ,[0.5] 'Author' 'Elias Mårtenson'
-Z ← Z,[1] 'BugEmail' 'bug-apl@gnu.org'
-Z ← Z,[1] 'Documentation' ''
-Z ← Z,[1] 'Download' 'https://github.com/lokedhs/apl-sqlite'
-Z ← Z,[1] 'License' 'LGPL'
-Z ← Z,[1] 'Portability' 'L3'
-Z ← Z,[1] 'Provides' 'SQL'
-Z ← Z,[1] 'Requires' ''
-Z ← Z,[1] 'Version' '1.0'
+  Z ← ,[0.5] 'Author' 'Elias Mårtenson'
+  Z ← Z,[1] 'BugEmail' 'bug-apl@gnu.org'
+  Z ← Z,[1] 'Documentation' ''
+  Z ← Z,[1] 'Download' 'https://github.com/lokedhs/apl-sqlite'
+  Z ← Z,[1] 'License' 'LGPL'
+  Z ← Z,[1] 'Portability' 'L3'
+  Z ← Z,[1] 'Provides' 'SQL'
+  Z ← Z,[1] 'Requires' ''
+  Z ← Z,[1] 'Version' '1.0'
 ∇
 
 ⍝
